@@ -1,0 +1,43 @@
+/* Steady — dark theme ("bedtime"). Peak usage is 4–7pm and bedtime, often
+   in dark rooms. Scope: add data-theme="dark" to any container (usually body).
+   Dark is warm and dim, never pure black; accents lighten to hold AA contrast. */
+[data-theme="dark"] {
+  --paper: #161c1a;
+  --surface: #1f2624;
+  --surface-sunken: #121715;
+  --ink: #e9edea;
+  --ink-soft: #a6b3ad;
+  --ink-faint: #74817b;
+  --line: #2e3733;
+  --line-strong: #3e4a45;
+
+  --accent: #6fae99;          /* lightened green for dark AA */
+  --accent-strong: #8fc3af;
+  --accent-soft: #24352f;
+  --accent-faint: #1c2925;
+  --on-accent: #10201b;
+
+  --repair: #d1855f;
+  --repair-strong: #dd9a78;
+  --repair-soft: #3a2a21;
+
+  --text-body: var(--ink);
+  --text-soft: var(--ink-soft);
+  --text-faint: var(--ink-faint);
+  --text-accent: #8fc3af;
+
+  --surface-app: var(--paper);
+  --surface-card: var(--surface);
+  --surface-well: var(--surface-sunken);
+  --surface-accent-deep: #1e3b33;
+
+  --border-hairline: var(--line);
+  --border-input: var(--line-strong);
+  --focus-ring: 0 0 0 3px rgba(143, 195, 175, 0.4);
+
+  --amber-700: #e3b968;
+  --amber-500: #d9a441;
+  --amber-50: #322a18;
+  --red-700: #e08a76;
+  --red-50: #35211c;
+}

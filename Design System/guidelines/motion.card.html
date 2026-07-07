@@ -1,0 +1,13 @@
+<!-- @dsCard group="Spacing" viewport="700x150" subtitle="Breath-paced: 4s in, 4s out. Nothing bounces." name="Motion" -->
+<!DOCTYPE html><html><head><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;font-family:var(--font-ui);background:var(--surface-accent-deep);padding:20px 24px;display:flex;gap:24px;align-items:center;color:var(--text-on-dark)}</style></head><body>
+<div style="position:relative;width:96px;height:96px;flex:none">
+  <div style="position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.14);animation:steady-breathe-soft calc(var(--dur-breath)*2) var(--ease-calm) infinite"></div>
+  <div style="position:absolute;inset:14px;border-radius:999px;background:rgba(255,255,255,.9);animation:steady-breathe calc(var(--dur-breath)*2) var(--ease-calm) infinite"></div>
+</div>
+<div style="font-size:13px;line-height:20px;color:var(--text-on-dark-soft)">
+  <b style="color:var(--text-on-dark)">steady-breathe</b> — 8s cycle, ease-calm.<br>
+  Durations: fast 200 · gentle 400 · slow 700.<br>
+  Press = scale 0.98. prefers-reduced-motion respected.
+</div>
+</body></html>

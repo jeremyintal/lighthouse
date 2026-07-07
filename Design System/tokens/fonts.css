@@ -1,0 +1,5 @@
+/* Steady — webfonts.
+   Display: Source Serif 4 (warmth, brand moments).
+   UI/body: Public Sans (sturdy, plainspoken, highly legible under stress).
+   Loaded from Google Fonts; substitute self-hosted binaries for production. */
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,420..620&family=Public+Sans:wght@400;500;600;700&display=swap");

@@ -1,0 +1,63 @@
+/* Steady — color tokens (light theme base values + semantic aliases).
+   Warm paper neutrals, deep calm green primary, clay for repair/warmth.
+   All text pairings meet WCAG AA at their intended sizes. */
+:root {
+  /* ---- Base: neutrals (warm, green-tinted) ---- */
+  --paper: #faf9f5;          /* app background */
+  --surface: #ffffff;        /* cards, sheets */
+  --surface-sunken: #f3f1ea; /* wells, inactive fields */
+  --ink: #22302b;            /* primary text */
+  --ink-soft: #5b6a64;       /* secondary text */
+  --ink-faint: #8b9791;      /* placeholders, disabled text (large sizes only) */
+  --line: #e4e1d7;           /* hairline borders */
+  --line-strong: #cfcbbe;    /* input borders, dividers that must read */
+
+  /* ---- Base: green (primary — calm, steady) ---- */
+  --green-900: #1e3b33;
+  --green-800: #274d42;
+  --green-700: #2f6f5e;      /* the Steady green */
+  --green-600: #3d8571;
+  --green-300: #9cc7b6;
+  --green-100: #e7f2ee;
+  --green-50:  #f2f8f5;
+
+  /* ---- Base: clay (repair, warmth — used sparingly) ---- */
+  --clay-700: #9c4f32;
+  --clay-600: #b4633f;
+  --clay-100: #f6e8df;
+  --clay-50:  #fbf3ee;
+
+  /* ---- Base: semantic ---- */
+  --amber-700: #8a6210;      /* warn text */
+  --amber-500: #d9a441;      /* warn edge/icon */
+  --amber-50:  #fdf3e4;      /* warn background */
+  --red-700: #a2402e;        /* crisis/destructive text — reserved, rare */
+  --red-50:  #f9ece8;        /* crisis background */
+
+  /* ---- Semantic aliases ---- */
+  --accent: var(--green-700);
+  --accent-strong: var(--green-800);
+  --accent-soft: var(--green-100);
+  --accent-faint: var(--green-50);
+  --on-accent: #ffffff;
+
+  --repair: var(--clay-600);
+  --repair-strong: var(--clay-700);
+  --repair-soft: var(--clay-100);
+
+  --text-body: var(--ink);
+  --text-soft: var(--ink-soft);
+  --text-faint: var(--ink-faint);
+  --text-accent: var(--green-700);
+  --text-on-dark: #f2f7f5;
+  --text-on-dark-soft: #bcd9cf;
+
+  --surface-app: var(--paper);
+  --surface-card: var(--surface);
+  --surface-well: var(--surface-sunken);
+  --surface-accent-deep: var(--green-800); /* breather / immersive moments */
+
+  --border-hairline: var(--line);
+  --border-input: var(--line-strong);
+  --focus-ring: 0 0 0 3px rgba(47, 111, 94, 0.35);
+}

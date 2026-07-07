@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steady Project Review</title>
+  <style>
+    :root {
+      --paper: #f8f6f1;
+      --surface: #ffffff;
+      --ink: #1f2d32;
+      --muted: #5f6e73;
+      --line: #ded9ce;
+      --green: #2d6859;
+      --green-dark: #214b42;
+      --green-soft: #e5f0ec;
+      --blue: #2f5f7d;
+      --blue-soft: #e8f0f5;
+      --amber: #9a6a20;
+      --amber-soft: #fbefd9;
+      --rose: #8c3f49;
+      --rose-soft: #f7e7ea;
+      --shadow: 0 18px 48px rgba(31, 45, 50, 0.08);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    a {
+      color: var(--green);
+    }
+
+    .hero {
+      background:
+        linear-gradient(135deg, rgba(33, 75, 66, 0.96), rgba(45, 104, 89, 0.92)),
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.16), transparent 28%);
+      color: #f7fbf9;
+      padding: 64px 28px 42px;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    .kicker {
+      margin: 0 0 12px;
+      color: #c4ded6;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(36px, 5vw, 68px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 740px;
+      margin: 22px 0 0;
+      color: #dcece7;
+      font-size: 19px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .pill {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      padding: 7px 13px;
+      background: rgba(255, 255, 255, 0.11);
+      color: #f4faf8;
+      font-size: 13px;
+    }
+
+    main {
+      padding: 34px 0 80px;
+    }
+
+    .review-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 34px;
+    }
+
+    .card,
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .card h2,
+    .panel h2,
+    section h2 {
+      margin: 0 0 12px;
+      font-size: 23px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .card p,
+    .panel p {
+      margin: 0 0 14px;
+    }
+
+    .card p:last-child,
+    .panel p:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .status-item {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfbf8;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-item strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 34px;
+    }
+
+    .toc a {
+      display: inline-flex;
+      min-height: 34px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: var(--surface);
+      color: var(--green-dark);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    section {
+      margin-top: 28px;
+      padding: 30px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: var(--green-soft);
+      color: var(--green-dark);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mini {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfbf8;
+    }
+
+    .mini h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .mini p,
+    .mini ul {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+      margin: 10px 0 0;
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    .hypothesis-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hypothesis {
+      display: grid;
+      grid-template-columns: 62px 1fr;
+      gap: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfbf8;
+    }
+
+    .h-id {
+      display: grid;
+      place-items: center;
+      height: 42px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-family: var(--mono);
+      font-weight: 800;
+    }
+
+    .hypothesis h3 {
+      margin: 0 0 4px;
+      font-size: 16px;
+    }
+
+    .hypothesis p {
+      margin: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .flow-step {
+      min-height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfbf8;
+    }
+
+    .flow-step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 12px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .flow-step h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+    }
+
+    .flow-step p {
+      margin: 0;
+    }
+
+    .quote-card {
+      border: 1px solid #cfded8;
+      border-radius: 8px;
+      padding: 22px;
+      background: linear-gradient(135deg, #f8fcfa, #edf6f2);
+    }
+
+    .quote-card blockquote {
+      margin: 0;
+      color: var(--green-dark);
+      font-size: 24px;
+      font-weight: 750;
+      line-height: 1.28;
+    }
+
+    .quote-card p {
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    .phase-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .phase-table th,
+    .phase-table td {
+      border: 1px solid var(--line);
+      padding: 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .phase-table th {
+      background: var(--green-soft);
+      color: var(--green-dark);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .phase-table tr:nth-child(even) td {
+      background: #fbfbf8;
+    }
+
+    .callout {
+      margin-top: 16px;
+      border-left: 4px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      background: var(--green-soft);
+    }
+
+    .callout.warning {
+      border-left-color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .callout.risk {
+      border-left-color: var(--rose);
+      background: var(--rose-soft);
+    }
+
+    .callout p {
+      margin: 0;
+    }
+
+    .next-actions {
+      display: grid;
+      gap: 12px;
+      counter-reset: action;
+    }
+
+    .action {
+      position: relative;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfbf8;
+    }
+
+    .action::before {
+      counter-increment: action;
+      content: counter(action);
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .action h3 {
+      margin: 0 0 4px;
+      font-size: 17px;
+    }
+
+    .action p {
+      margin: 0;
+    }
+
+    code {
+      border-radius: 4px;
+      padding: 2px 5px;
+      background: #eef0ea;
+      font-family: var(--mono);
+      font-size: 0.9em;
+    }
+
+    footer {
+      margin-top: 42px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .review-grid,
+      .two-col,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .status-item,
+      .hypothesis {
+        grid-template-columns: 1fr;
+      }
+
+      section {
+        padding: 22px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wrap {
+        width: min(100% - 28px, 1120px);
+      }
+
+      .hero {
+        padding: 46px 14px 34px;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .tag {
+        display: inline-flex;
+        margin-top: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="kicker">Project review · Generated July 6, 2026</p>
+      <h1>Steady: a 90-second co-regulation tool for overwhelmed toddler parents</h1>
+      <p class="hero-copy">A synthesis of the current planning artifacts for review: the project hypothesis, problem, goals, product shape, current status, and the next decisions that matter.</p>
+      <div class="meta-row">
+        <span class="pill">Working title: Steady</span>
+        <span class="pill">Stage: concept / pre-validation</span>
+        <span class="pill">Source: local planning docs</span>
+        <span class="pill">No implementation found in this workspace</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="review-grid">
+      <article class="card">
+        <h2>Executive Snapshot</h2>
+        <p><strong>Steady</strong> is planned as a mobile app for parents of toddlers who are already overloaded by tantrums, bedtime battles, hitting, refusals, and public meltdowns. Its wedge is not another parenting curriculum. It is an in-the-moment SOS flow that helps the parent regulate first, then gives one practical script and one thing to avoid.</p>
+        <p>The strongest idea in the plan is its discipline around the moment of use: 90 seconds, one hand, audio-first, no shame, and no long content library standing between the parent and the next right move. The broader opportunity is to become a daily steadiness ritual: a way for parents to start the day 1% calmer, more grateful, and more ready to meet both the hard and beautiful parts of raising a child.</p>
+        <div class="callout warning">
+          <p><strong>Important status note:</strong> the files in this workspace describe a product and onboarding strategy. They do not show a built app, executed validation, customer interviews, code, analytics, or a live prototype.</p>
+        </div>
+      </article>
+
+      <aside class="panel">
+        <h2>Current Status</h2>
+        <div class="status-list">
+          <div class="status-item">
+            <div class="label">Product</div>
+            <div><strong>Defined concept</strong><span class="muted">Parent-first regulation app with SOS, scripts, progress, and later community.</span></div>
+          </div>
+          <div class="status-item">
+            <div class="label">Validation</div>
+            <div><strong>Not yet executed</strong><span class="muted">Problem interviews, landing page, smoke test, and pricing validation remain next steps.</span></div>
+          </div>
+          <div class="status-item">
+            <div class="label">Onboarding</div>
+            <div><strong>Deeply planned</strong><span class="muted">Anonymous-first, value-before-identity flow is specified but not built.</span></div>
+          </div>
+          <div class="status-item">
+            <div class="label">Build</div>
+            <div><strong>No app code here</strong><span class="muted">The workspace currently contains planning artifacts and one onboarding HTML plan.</span></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <nav class="toc" aria-label="Page sections">
+      <a href="#problem">Problem</a>
+      <a href="#hypotheses">Hypotheses</a>
+      <a href="#solution">Solution</a>
+      <a href="#ritual">Daily Ritual</a>
+      <a href="#goals">Goals</a>
+      <a href="#status">Status</a>
+      <a href="#onboarding">Onboarding</a>
+      <a href="#risks">Risks</a>
+      <a href="#next">What's Next</a>
+    </nav>
+
+    <section id="problem">
+      <div class="section-head">
+        <div>
+          <h2>The Problem It Solves</h2>
+          <p class="muted">Parents usually do not fail because they lack advice. They fail because they are dysregulated in the exact moment they need to co-regulate.</p>
+        </div>
+        <span class="tag">Core insight</span>
+      </div>
+
+      <div class="two-col">
+        <div class="mini">
+          <h3>Existing support is inaccessible</h3>
+          <p>Therapy and parent coaching can help, but cost, scheduling, childcare logistics, and stigma keep many parents out.</p>
+        </div>
+        <div class="mini">
+          <h3>Advice arrives at the wrong time</h3>
+          <p>Books, podcasts, and social content work best when the parent is calm. The acute need happens at 5:45pm with a child screaming nearby.</p>
+        </div>
+        <div class="mini">
+          <h3>Meditation apps assume quiet</h3>
+          <p>Traditional mindfulness products expect silence and 10 minutes. This use case has one hand, noise, urgency, and maybe 60 to 90 seconds.</p>
+        </div>
+        <div class="mini">
+          <h3>Shame makes isolation worse</h3>
+          <p>After yelling or losing patience, parents often believe everyone else is handling it better. That shame suppresses help-seeking.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p><strong>The gap:</strong> a fast, judgment-free tool for the dysregulation moment itself, followed by repair support and carefully constrained peer reassurance.</p>
+      </div>
+    </section>
+
+    <section id="hypotheses">
+      <div class="section-head">
+        <div>
+          <h2>Project Hypotheses</h2>
+          <p class="muted">The plan is organized around testing the riskiest assumptions first.</p>
+        </div>
+        <span class="tag">Pre-validation</span>
+      </div>
+
+      <div class="hypothesis-list">
+        <div class="hypothesis">
+          <div class="h-id">H1</div>
+          <div>
+            <h3>Parents will use a phone during or right after a hard moment</h3>
+            <p>This is the riskiest assumption. If parents will not reach for the tool in the moment, the product should pivot toward the calmer aftermath and repair moment.</p>
+          </div>
+        </div>
+        <div class="hypothesis">
+          <div class="h-id">H2</div>
+          <div>
+            <h3>Regulation-first framing will resonate</h3>
+            <p>The product bets that parents will respond to "regulate yourself first" because it names the real bottleneck without blaming them.</p>
+          </div>
+        </div>
+        <div class="hypothesis">
+          <div class="h-id">H3</div>
+          <div>
+            <h3>Toddler flashpoints can create natural retention</h3>
+            <p>If the SOS flow works once, the frequent recurrence of hard moments may bring parents back without engagement gimmicks.</p>
+          </div>
+        </div>
+        <div class="hypothesis">
+          <div class="h-id">H4</div>
+          <div>
+            <h3>A constrained peer loop can reduce shame</h3>
+            <p>The plan favors anonymous "been there" moment sharing before any full forum, limiting moderation risk while testing community value.</p>
+          </div>
+        </div>
+        <div class="hypothesis">
+          <div class="h-id">H5</div>
+          <div>
+            <h3>Parents priced out of coaching may pay for a smaller tool</h3>
+            <p>The target price is roughly $50 to $80 per year, positioned well below premium parent coaching programs.</p>
+          </div>
+        </div>
+        <div class="hypothesis">
+          <div class="h-id">H6</div>
+          <div>
+            <h3>The business can work as a side project</h3>
+            <p>The business goal is $3K+ MRR within 18 months, with founder maintenance time at or below 8 hours per week after launch.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="solution">
+      <div class="section-head">
+        <div>
+          <h2>Product Shape</h2>
+          <p class="muted">The MVP is Loop 1 only. Later loops add depth and retention after the core behavior is proven.</p>
+        </div>
+        <span class="tag">MVP wedge</span>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step">
+          <span class="num">1</span>
+          <h3>Regulate the parent</h3>
+          <p>A 0 to 60 second guided breath, grounding phrase, haptics, and reframe. It should work with minimal screen attention.</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">2</span>
+          <h3>Give the next right move</h3>
+          <p>The parent chooses the situation and gets one script plus one thing not to do. Not an article, a card.</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">3</span>
+          <h3>Close the loop</h3>
+          <p>An optional check-in records the hard moment and can unlock a repair script if the parent lost patience.</p>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top: 16px;">
+        <div class="mini">
+          <h3>Loop 2: between-moment guidance</h3>
+          <p>Short audio lessons, script-first playbooks, and one weekly thing to try. This supports retention without becoming a content swamp.</p>
+        </div>
+        <div class="mini">
+          <h3>Loop 3: community</h3>
+          <p>Starts as moderated, no-comment "been there" sharing. Full discussion is intentionally phase-gated behind moderation tooling.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="ritual">
+      <div class="section-head">
+        <div>
+          <h2>Daily Ritual Layer</h2>
+          <p class="muted">A calmer morning loop could make Steady more than an emergency tool: it becomes a small daily practice for choosing the kind of parent you want to be.</p>
+        </div>
+        <span class="tag">New direction</span>
+      </div>
+
+      <div class="quote-card">
+        <blockquote>"Today, I do not have to be a perfect parent. I only have to be a present one: steady enough to repair, humble enough to learn, and loving enough to begin again."</blockquote>
+        <p><strong>Example daily affirmation</strong> · Original Steady voice draft for the morning check-in.</p>
+      </div>
+
+      <div class="two-col" style="margin-top: 16px;">
+        <div class="mini">
+          <h3>What it could feel like</h3>
+          <p>Each morning, the parent receives one grounding affirmation, reflection prompt, or sourced line of encouragement. The tone should feel like a parent being met at the edge of the bed: honest, warm, energizing, and never syrupy.</p>
+        </div>
+        <div class="mini">
+          <h3>Why it belongs</h3>
+          <p>The SOS tool helps in the hard moment. The daily ritual helps before the hard moment: it builds identity, gratitude, and emotional readiness one small repetition at a time.</p>
+        </div>
+      </div>
+
+      <h3>Content formats to test</h3>
+      <div class="flow">
+        <div class="flow-step">
+          <span class="num">1</span>
+          <h3>Affirmation</h3>
+          <p>A short original line in the app's voice: "I can be firm without being harsh. I can repair without being ashamed."</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">2</span>
+          <h3>Reflection prompt</h3>
+          <p>One tiny journal-style question: "What is one ordinary thing your child does that you want to remember?"</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">3</span>
+          <h3>Sourced quote</h3>
+          <p>A carefully attributed public-domain or licensed quote from a philosopher, psychologist, writer, or adult child thanking a parent.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p><strong>Product implication:</strong> this adds a second loop to validate: daily morning use. It should be measured separately from SOS usage so the team can learn whether Steady is primarily an emergency tool, a daily ritual, or the rare product that can be both.</p>
+      </div>
+    </section>
+
+    <section id="goals">
+      <div class="section-head">
+        <div>
+          <h2>Goals and Guardrails</h2>
+          <p class="muted">The plan is unusually explicit about what the product should not become.</p>
+        </div>
+        <span class="tag">Success criteria</span>
+      </div>
+
+      <div class="two-col">
+        <div class="mini">
+          <h3>Product goal</h3>
+          <p>Become the thing a parent reaches for in the hardest 90 seconds of their day, and the small daily ritual that helps them meet the day with 1% more steadiness.</p>
+        </div>
+        <div class="mini">
+          <h3>Business goal</h3>
+          <p>Reach $3K+ MRR within 18 months as a low-maintenance subscription product, with optional expansion through employers, pediatricians, daycares, or wellness platforms.</p>
+        </div>
+      </div>
+
+      <h3>Key metric targets</h3>
+      <table class="phase-table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Target</th>
+            <th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Activation</td>
+            <td>50%+ complete one full SOS flow within 7 days</td>
+            <td>Proves parents know where the tool is and can use it before the next real flashpoint.</td>
+          </tr>
+          <tr>
+            <td>North Star</td>
+            <td>Weekly SOS users</td>
+            <td>Counts the behavior the product exists to create, not passive content consumption.</td>
+          </tr>
+          <tr>
+            <td>Daily ritual</td>
+            <td>Morning reflection completed 3+ days/week</td>
+            <td>Tests whether the product can build proactive steadiness, not only reactive rescue.</td>
+          </tr>
+          <tr>
+            <td>Retention</td>
+            <td>35%+ day-30, 20%+ day-90</td>
+            <td>Tests whether natural flashpoint frequency creates repeat use.</td>
+          </tr>
+          <tr>
+            <td>Session shape</td>
+            <td>Median SOS session under 3 minutes</td>
+            <td>Longer sessions imply the app is becoming a burden in the moment it is supposed to simplify.</td>
+          </tr>
+          <tr>
+            <td>Business</td>
+            <td>$1.5K to $2K MRR by month 12, $3K to $5K by month 18</td>
+            <td>Defines whether this can become a meaningful side business rather than a research project.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout risk">
+        <p><strong>Hard guardrails:</strong> not therapy, no diagnosis or treatment claims, no child surveillance, no engagement-maximizing feed, no unmoderated parenting forum, and no copying Good Inside scripts or proprietary language.</p>
+      </div>
+    </section>
+
+    <section id="status">
+      <div class="section-head">
+        <div>
+          <h2>Current Status</h2>
+          <p class="muted">What appears to exist now, based on the workspace files.</p>
+        </div>
+        <span class="tag">As of July 6, 2026</span>
+      </div>
+
+      <div class="two-col">
+        <div class="mini">
+          <h3>Completed planning work</h3>
+          <ul>
+            <li>Comprehensive master product plan.</li>
+            <li>Problem statement and target personas.</li>
+            <li>Risk-ordered hypotheses.</li>
+            <li>Phased task queue from validation through launch.</li>
+            <li>Onboarding and account creation redesign plan.</li>
+            <li>Existing HTML export of the onboarding plan.</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>Not yet evidenced here</h3>
+          <ul>
+            <li>No interview notes or coded research findings.</li>
+            <li>No landing page or waitlist data.</li>
+            <li>No smoke-test prototype usage data.</li>
+            <li>No app source code.</li>
+            <li>No content drafts or clinician review record.</li>
+            <li>No analytics, pricing, or retention data.</li>
+          </ul>
+        </div>
+      </div>
+
+      <table class="phase-table">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Purpose</th>
+            <th>Status in workspace</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Phase 0: Validation</td>
+            <td>Test H1, H2, H5, and acquisition before building.</td>
+            <td>Planned, not shown as executed.</td>
+          </tr>
+          <tr>
+            <td>Phase 1: MVP build</td>
+            <td>Create a TestFlight build with SOS flow, content, auth, analytics, and safety basics.</td>
+            <td>Planned. Onboarding/auth has expanded plan.</td>
+          </tr>
+          <tr>
+            <td>Phase 2: Private beta</td>
+            <td>Measure real usage, retention, pricing, and early community signal.</td>
+            <td>Planned, dependent on Phase 1.</td>
+          </tr>
+          <tr>
+            <td>Phase 3: Launch and growth</td>
+            <td>App Store launch, short-form content, SEO, referrals, and optional B2B probes.</td>
+            <td>Planned, future state.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="onboarding">
+      <div class="section-head">
+        <div>
+          <h2>Onboarding Strategy</h2>
+          <p class="muted">Claude's latest major work appears to be the onboarding and account creation redesign.</p>
+        </div>
+        <span class="tag">Plan only</span>
+      </div>
+
+      <p>The onboarding plan argues that the first-run experience should not describe the product. It should let the parent rehearse one SOS flow before the next real meltdown. This is a strong fit with the product thesis because the hardest part is not awareness, it is retrieval under stress.</p>
+
+      <div class="two-col">
+        <div class="mini">
+          <h3>First-run flow</h3>
+          <ul>
+            <li>Emotional landing screen.</li>
+            <li>Two-tap micro-personalization.</li>
+            <li>Real script card and practice breather.</li>
+            <li>Lock-screen SOS setup prompt.</li>
+            <li>Soft account creation after value.</li>
+            <li>Home screen with the big SOS button.</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>Account model</h3>
+          <ul>
+            <li>Anonymous-first Supabase session.</li>
+            <li>Upgrade to claimed account only when useful.</li>
+            <li>Sign in with Apple and email OTP, no passwords.</li>
+            <li>Minimal data collection and explicit account deletion.</li>
+            <li>Notifications delayed until after real SOS value.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p><strong>Best design decision:</strong> "value before identity." For this audience, avoiding a forced signup wall is both a trust move and a conversion move.</p>
+      </div>
+    </section>
+
+    <section id="risks">
+      <div class="section-head">
+        <div>
+          <h2>Main Risks</h2>
+          <p class="muted">These are the things that can break the product even if the planning is good.</p>
+        </div>
+        <span class="tag">Decision risks</span>
+      </div>
+
+      <div class="two-col">
+        <div class="mini">
+          <h3>H1 may fail</h3>
+          <p>Parents may not open an app mid-tantrum. This must be tested cheaply before committing to a full native build.</p>
+        </div>
+        <div class="mini">
+          <h3>Safety and trust risk</h3>
+          <p>The app must never look like a substitute for clinical care. Crisis signposting and clinician review are required before scale.</p>
+        </div>
+        <div class="mini">
+          <h3>Content quality risk</h3>
+          <p>The product needs original, concise, humane scripts. If the voice feels generic, copied, or shaming, the product loses its edge.</p>
+        </div>
+        <div class="mini">
+          <h3>Side-project scope risk</h3>
+          <p>Community, content, support, legal, and app-platform complexity could exceed the intended 8 founder-hours per week.</p>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <p><strong>Recommended discipline:</strong> do not start Phase 1 build until Phase 0 has real evidence that parents understand the wedge, will try it in or near the moment, and show some willingness to pay.</p>
+      </div>
+    </section>
+
+    <section id="next">
+      <div class="section-head">
+        <div>
+          <h2>What's Next</h2>
+          <p class="muted">The highest-value next work is validation, not more planning polish.</p>
+        </div>
+        <span class="tag">Next 1 to 2 weeks</span>
+      </div>
+
+      <div class="next-actions">
+        <div class="action">
+          <div>
+            <h3>Write and run the interview script</h3>
+            <p>Recruit 20 target parents and focus on the last three hard moments: what happened, what they reached for, what they wish they had, and whether they would pay.</p>
+          </div>
+        </div>
+        <div class="action">
+          <div>
+            <h3>Create the landing page and waitlist</h3>
+            <p>Test the 90-second SOS positioning, collect emails, and ask one question about the hardest flashpoint. Target 8%+ visitor-to-email conversion.</p>
+          </div>
+        </div>
+        <div class="action">
+          <div>
+            <h3>Build the ugly web smoke test</h3>
+            <p>One breather, five scripts, and basic usage tracking. The point is to test whether anyone uses it during or immediately after a real moment.</p>
+          </div>
+        </div>
+        <div class="action">
+          <div>
+            <h3>Draft the first scripts and repair card</h3>
+            <p>Write original content for the top flashpoints. The repair script after yelling is likely the strongest trust-building asset.</p>
+          </div>
+        </div>
+        <div class="action">
+          <div>
+            <h3>Run name, safety, and clinician-review setup</h3>
+            <p>Screen the working name, document the not-therapy posture, and identify a licensed family therapist or psychologist to review content.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p><strong>Review question for you:</strong> before anything else, decide whether you believe the riskiest wedge is worth testing: "Will a parent reach for this in the hardest 90 seconds, or is the real product the repair moment after?"</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>Generated from <code>PARENT_REGULATION_APP_PLAN.md</code>, <code>ONBOARDING_REDESIGN_PLAN.md</code>, and <code>ONBOARDING_REDESIGN_PLAN.html</code> in the local workspace. This page is a synthesis for review, not a replacement for the source plans.</p>
+    </footer>
+  </main>
+</body>
+</html>

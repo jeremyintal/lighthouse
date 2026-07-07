@@ -1,0 +1,20 @@
+/* Steady — type tokens. Two families only.
+   Serif = warmth (headlines, script lines, brand moments).
+   Sans = everything functional. Body floor is 17px — read mid-crisis, one glance. */
+:root {
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-ui: "Public Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace; /* docs/specs only, never in-app */
+
+  /* Scale (size / line-height / weight) */
+  --type-display-size: 34px;   --type-display-line: 42px;   --type-display-weight: 560; /* serif */
+  --type-title-size: 26px;     --type-title-line: 33px;     --type-title-weight: 540;   /* serif */
+  --type-script-size: 22px;    --type-script-line: 32px;    --type-script-weight: 500;  /* serif — the words a parent says out loud */
+  --type-heading-size: 20px;   --type-heading-line: 26px;   --type-heading-weight: 600; /* sans */
+  --type-body-size: 17px;      --type-body-line: 26px;      --type-body-weight: 400;    /* sans */
+  --type-label-size: 15px;     --type-label-line: 20px;     --type-label-weight: 600;   /* sans */
+  --type-caption-size: 13px;   --type-caption-line: 18px;   --type-caption-weight: 500; /* sans */
+  --type-overline-size: 12px;  --type-overline-line: 16px;  --type-overline-weight: 700; /* sans, +0.08em tracking, uppercase */
+
+  --tracking-overline: 0.08em;
+}

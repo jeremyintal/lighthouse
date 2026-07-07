@@ -1,0 +1,24 @@
+/* Steady — motion. Slow, breathing, never bouncy. Motion exists to lower
+   heart rate, not to delight. Respect prefers-reduced-motion everywhere. */
+:root {
+  --ease-calm: cubic-bezier(0.33, 0, 0.2, 1);
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 200ms;    /* taps, state changes */
+  --dur-gentle: 400ms;  /* card entrances, sheet slides */
+  --dur-slow: 700ms;    /* screen transitions into calm moments */
+  --dur-breath: 4000ms; /* one half of the breathing cycle (4s in, 4s out) */
+}
+
+@keyframes steady-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes steady-breathe-soft {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.18); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

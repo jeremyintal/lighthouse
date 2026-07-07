@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steady — Onboarding &amp; Account Creation Redesign Plan</title>
+<style>
+  :root {
+    --ink: #26323a;
+    --ink-soft: #55656f;
+    --accent: #2f6f5e;
+    --accent-soft: #e7f2ee;
+    --paper: #fbfaf7;
+    --card: #ffffff;
+    --line: #e3e0d8;
+    --warn-bg: #fdf3e4;
+    --warn-edge: #d9a441;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px 96px; }
+
+  header.hero {
+    background: linear-gradient(160deg, #274d42, #2f6f5e 70%, #3d8571);
+    color: #f2f7f5;
+    padding: 56px 28px 44px;
+  }
+  header.hero .wrap { padding-bottom: 0; }
+  .kicker {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: #bcd9cf; margin: 0 0 10px;
+  }
+  h1 { font-size: 32px; line-height: 1.2; margin: 0 0 14px; font-weight: 700; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .chip {
+    background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px; padding: 4px 14px; font-size: 13px;
+  }
+  .chip strong { color: #fff; }
+
+  nav.toc {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 26px; margin: -26px 0 44px; box-shadow: 0 8px 24px rgba(38,50,58,.07);
+    position: relative; z-index: 2;
+  }
+  nav.toc h2 { margin: 0 0 10px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  nav.toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 40px; font-size: 14.5px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  h2.sec {
+    font-size: 23px; margin: 56px 0 16px; padding-top: 14px;
+    border-top: 3px solid var(--accent); color: var(--ink);
+  }
+  h2.sec .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 8px; }
+  h3 { font-size: 17.5px; margin: 30px 0 10px; }
+  h4 { font-size: 15.5px; margin: 24px 0 8px; color: var(--ink); }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 16px; padding-left: 26px; }
+  li { margin: 6px 0; }
+  li > ul, li > ol { margin-top: 6px; margin-bottom: 6px; }
+  strong { color: #1c2529; }
+  a { color: var(--accent); }
+  code {
+    font-family: var(--mono); font-size: .86em; background: #eef0ea;
+    border-radius: 4px; padding: 1px 5px;
+  }
+
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 18px 0 22px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-edge); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .step {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 24px 14px; margin: 16px 0;
+  }
+  .step h3 { margin: 0 0 8px; display: flex; align-items: baseline; gap: 10px; }
+  .step .badge {
+    background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+    border-radius: 999px; padding: 2px 11px; white-space: nowrap;
+  }
+  .step .badge.alt { background: #7a8a94; }
+  .step .timing { font-size: 13px; color: var(--ink-soft); font-weight: 400; }
+  .step.highlight { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  table { border-collapse: collapse; width: 100%; margin: 16px 0 22px; font-size: 14.5px; background: var(--card); }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: #eef2ee; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+  tr:nth-child(even) td { background: #fafaf6; }
+
+  .task {
+    display: grid; grid-template-columns: 150px 1fr; gap: 4px 18px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 18px; margin: 10px 0; font-size: 15px;
+  }
+  .task .id { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 700; padding-top: 2px; }
+  .task .exit { grid-column: 2; font-size: 13.5px; color: var(--ink-soft); }
+  .task .exit em { font-style: normal; font-weight: 600; }
+  @media (max-width: 620px) {
+    .task { grid-template-columns: 1fr; }
+    .task .exit { grid-column: 1; }
+    nav.toc ol { columns: 1; }
+  }
+
+  footer {
+    margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">Steady · Plan for review — not yet executed</p>
+    <h1>Onboarding &amp; Account Creation Redesign Plan</h1>
+    <p style="margin:0; color:#d7e8e1; max-width:640px;">Everything between App Store install and the user's first <em>real</em> SOS moment: first-run experience, personalization, account creation, permissions, and the measurement &amp; experiment system around them.</p>
+    <div class="meta">
+      <span class="chip">Created <strong>2026-07-03</strong></span>
+      <span class="chip">Companion to <strong>PARENT_REGULATION_APP_PLAN.md</strong></span>
+      <span class="chip">Supersedes <strong>PREG-P1-013</strong></span>
+      <span class="chip">Shapes <strong>PREG-P1-011 / P1-017</strong></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">Why onboarding is the highest-leverage screen set</a></li>
+    <li><a href="#s2">Design principles (product law)</a></li>
+    <li><a href="#s3">The redesigned flow, screen by screen</a></li>
+    <li><a href="#s4">Account creation design</a></li>
+    <li><a href="#s5">Permissions strategy</a></li>
+    <li><a href="#s6">Special entry paths</a></li>
+    <li><a href="#s7">Where monetization touches onboarding</a></li>
+    <li><a href="#s8">Measurement &amp; experimentation</a></li>
+    <li><a href="#s9">Content, accessibility &amp; safety requirements</a></li>
+    <li><a href="#s10">Task breakdown (PREG-ONB-001…008)</a></li>
+    <li><a href="#s11">Risks specific to this flow</a></li>
+    <li><a href="#s12">Open questions</a></li>
+  </ol>
+</nav>
+
+<h2 class="sec" id="s1"><span class="num">1.</span>Why onboarding is the highest-leverage screen set in the product</h2>
+<p>The entire business rests on the activation metric: <strong>≥50% of new users complete one full SOS flow within 7 days of install</strong> (§7 of the master plan). Everything downstream — H1 (they reach for the phone mid-moment), H3 (retention), H5 (willingness to pay) — is gated on the parent knowing, <em>before the next meltdown</em>, that the SOS button exists, where it lives, and that it takes 90 seconds. Onboarding is the only guaranteed touchpoint where we can teach that. A parent who installs at 10pm and never rehearses the flow will not remember it at 5:45pm the next day with a screaming toddler on the floor.</p>
+<p>The conversion math: consumer wellness apps lose 25–60% of installs at a forced signup wall, and each added onboarding screen costs roughly 5–15% of the remaining cohort. Our audience compounds this — Depleted Dana is installing one-handed during a nap window or at 11pm post-guilt-spiral. She has minutes, not attention.</p>
+<div class="callout">
+  <p><strong>Onboarding's single job:</strong> get the parent to <em>rehearse</em> one SOS flow in the first session, and remove every obstacle between install and that rehearsal. Account creation, personalization, permissions, and monetization are all subordinate to that job and must individually justify their screen-time cost.</p>
+</div>
+
+<h2 class="sec" id="s2"><span class="num">2.</span>Design principles (product law for this flow)</h2>
+<ol>
+  <li><strong>Value before identity.</strong> No account wall at first launch. The breather and first script work before we know the user's email. Accounts are offered when there is something worth saving, not demanded as an entry toll. (Also keeps us clean under App Store Guideline 5.1.1 — apps may not require account creation for non-account-based features.)</li>
+  <li><strong>Every screen pays rent.</strong> A screen ships only if it measurably increases activation, personalizes the first script, or is legally required. "Welcome tour" carousels explaining features do not pay rent; a rehearsed breather does.</li>
+  <li><strong>Two minutes to first value, one-handed.</strong> Total first-run time budget: ≤120 seconds to a completed practice breather. Every screen operable with a thumb; every question answerable with one tap; "Skip" visible on everything non-essential.</li>
+  <li><strong>Trust is the conversion mechanic.</strong> This audience is privacy-sensitive and shame-loaded. The plain-language privacy promise ("we never collect data about your child"), the clinician-review badge, and zero-judgment copy do more for signup conversion than any growth pattern. No guilt copy, no fake urgency, no dark patterns — consistent with the §3 non-goals of the master plan.</li>
+  <li><strong>Ask for things at the moment they make sense.</strong> Notifications, widget install, account creation, and (eventually) payment each have a contextual moment where the value is self-evident. Front-loading all asks into first-run is where onboarding flows go to die.</li>
+  <li><strong>The flow must fail gracefully into full anonymity.</strong> A user who skips every question, declines every permission, and never creates an account still gets a working SOS flow. Free-tier metering runs on-device/anonymous-ID until an account exists.</li>
+</ol>
+
+<h2 class="sec" id="s3"><span class="num">3.</span>The redesigned flow, screen by screen</h2>
+<p>Total: 6 steps, ~90–120 seconds, 3 of them skippable. Progress shown as a thin bar, not "step 3 of 9" (dots/counts invite abandonment math).</p>
+
+<div class="step">
+  <h3><span class="badge alt">Step 0</span> App Store product page <span class="timing">part of the funnel, not an afterthought</span></h3>
+  <ul>
+    <li>Screenshots sell the 90-second moment (per PREG-P3-030): first screenshot is the big SOS button, second is a script card, third is the "reviewed by a licensed family therapist" trust frame.</li>
+    <li>Copy sets the expectation onboarding then fulfills: "Help for the hardest 90 seconds of your day." Message match between store page and first screen is a known conversion lever; a mismatch is a silent churn source we'd never see in analytics.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <h3><span class="badge">Step 1</span> Emotional landing <span class="timing">1 screen · ~10s</span></h3>
+  <ul>
+    <li>One screen, no carousel. Full-bleed calm visual. Headline names the real problem without shame: <strong>"For the moment you're about to lose it."</strong> Subline: "90 seconds. One hand. No judgment."</li>
+    <li>Single CTA: <strong>"Show me how it works."</strong> Secondary, smaller: "I already have an account" (returning-user path, §6).</li>
+    <li>No logo-splash-then-tour. This screen's only job is "you're in the right place," felt in under 5 seconds.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <h3><span class="badge">Step 2</span> Micro-personalization <span class="timing">2 taps · ~15s · skippable</span></h3>
+  <p>Exactly two questions, each one tap, each directly consumed by the very next screen:</p>
+  <ol>
+    <li><strong>"How old is your kid?"</strong> — age bands only (Under 2 / 2–3 / 4–5 / A few of these). Framed as "so the scripts match your kid's stage." Never a name, never a birthdate — this is the no-child-data promise made visible.</li>
+    <li><strong>"Which moment is hardest right now?"</strong> — the top-5 flashpoint taxonomy from PREG-P0-001 (tantrums / hitting / refusals / public meltdowns / bedtime).</li>
+  </ol>
+  <p>Rules: no free-text anywhere in first-run (keeps the crisis-interception surface at zero during onboarding), "Skip" on both, answers editable later. Two questions is the ceiling, not the floor — the experiment backlog (§8) tests whether even these earn their cost. Each answer immediately visibly matters (question 2's answer is literally the next screen's content), which is what makes personalization feel like service rather than data collection.</p>
+</div>
+
+<div class="step highlight">
+  <h3><span class="badge">Step 3</span> The payoff: their script + a rehearsed breather <span class="timing">~45s · <strong>the activation moment</strong></span></h3>
+  <p>This is the core redesign move: onboarding doesn't <em>describe</em> the product, it <em>is</em> the product once.</p>
+  <ul>
+    <li>Show the script card for the flashpoint they picked ("Here's exactly what you'll get mid-meltdown"), in the real card UI.</li>
+    <li>Then: <strong>"The breather works best if you've done it once when things are calm. 60 seconds — try it now."</strong> Run the real haptic breather, full production quality, ending on the reframe line.</li>
+    <li>Close: "That's it. That's the whole thing. Next time it's happening, it's one button away."</li>
+    <li>This rehearsal is the onboarding activation event (<code>practice_breather_completed</code>) and the strongest known predictor we can manufacture for the real 7-day activation metric. It also front-loads H2's positioning: the first thing the app ever does is regulate <em>the parent</em>.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <h3><span class="badge">Step 4</span> Put the button where the moment happens <span class="timing">~15s · skippable</span></h3>
+  <ul>
+    <li>Immediately after the rehearsal, while motivation is peak: <strong>"Meltdowns don't wait for you to find an app. Put SOS on your lock screen."</strong> Guided lock-screen widget / App Intent setup (PREG-P1-012), with a 15-second visual walkthrough (iOS widget install is genuinely unintuitive; assume zero prior widget knowledge).</li>
+    <li>"I'll do it later" persists the prompt as a dismissible home-screen card, and it re-offers once after the first <em>real</em> SOS (the moment the user has proven the need).</li>
+    <li>This step exists because H1 lives or dies on entry friction; it is the only "feature setup" allowed in first-run.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <h3><span class="badge">Step 5</span> Account creation, soft-gated <span class="timing">~20s · declinable</span></h3>
+  <p>Full design in §4. Placement rationale: the user has now received value (script + rehearsal), so the ask lands as "keep this" rather than "pay a toll." Framing: <strong>"Save your setup"</strong> — keeps your scripts, your progress view, and your free SOS flows across devices. Decline path is a real button ("Not now — stay anonymous"), not a shame-toned ghost link.</p>
+</div>
+
+<div class="step">
+  <h3><span class="badge">Step 6</span> Land on the real home screen <span class="timing">~5s</span></h3>
+  <ul>
+    <li>Home is the big SOS button with a one-time coach mark: "This is all you need to remember."</li>
+    <li>No notification prompt yet (see §5). No paywall (see §7). First-run ends here, under budget.</li>
+  </ul>
+</div>
+
+<h3>Post-first-session onboarding (the part most apps skip)</h3>
+<p>Activation isn't done at first-run close; it's done at the first <em>real</em> SOS. The days between are bridged by:</p>
+<ul>
+  <li><strong>Day-1 message (if notifications granted; else email if account exists):</strong> one message, the single most useful repair script as content, not a nag: "For the next time it goes sideways: what to say after you yell." Repair is the trust engine (§7 of master plan) — leading with it makes the first notification a gift.</li>
+  <li><strong>Widget re-prompt</strong> after first real SOS if declined at Step 4.</li>
+  <li><strong>Second-session coach mark</strong> on the progress view once ≥1 real SOS is logged.</li>
+  <li>Hard cap: no more than 2 proactive messages in week 1. Session length and message volume are cost metrics for this product, not wins.</li>
+</ul>
+
+<h2 class="sec" id="s4"><span class="num">4.</span>Account creation design</h2>
+
+<h3>Model: anonymous-first with upgrade, not signup-first</h3>
+<ul>
+  <li><strong>First launch creates a Supabase anonymous session silently.</strong> All state (personalization answers, rehearsal completion, free-tier meter, progress view) attaches to it from second zero. There is no logged-out state in the app at all — only <em>anonymous</em> vs. <em>claimed</em> accounts.</li>
+  <li><strong>Upgrading to a claimed account is offered, never required, at four contextual moments:</strong>
+    <ol>
+      <li>Step 5 of first-run ("save your setup") — the primary offer.</li>
+      <li>First progress-view visit with real data in it ("14 hard moments this month" is now worth protecting).</li>
+      <li>Any future purchase (payment requires a claimed account for restore/receipt reasons — RevenueCat + Supabase identity link).</li>
+      <li>Community/"been there" participation (pseudonymous but claimed, for moderation accountability).</li>
+    </ol>
+  </li>
+  <li>Supabase anonymous-auth → identity-link migration preserves all data on upgrade; the user never re-answers anything. Losing state at signup is one of the classic silent-churn bugs — treat data continuity as an acceptance criterion, not a nice-to-have.</li>
+</ul>
+
+<h3>Methods: passwordless only</h3>
+<ul>
+  <li><strong>Primary: Sign in with Apple.</strong> One tap, no keyboard, native sheet, and "Hide My Email" actively <em>helps</em> our privacy positioning. iOS-first product → this should carry ≥70% of claimed accounts. (Also mandatory under App Store Guideline 4.8 the moment we offer any third-party login, so we lead with it rather than comply with it.)</li>
+  <li><strong>Secondary: email magic link / 6-digit OTP.</strong> For the Apple-averse and as the cross-platform bridge for month-6+ Android. OTP over pure magic-link as primary verification: parents installing on a phone where their email lives in another app abandon at the inbox hop; a 6-digit code typed from a notification banner survives it. (Supabase email OTP supports both from one flow.)</li>
+  <li><strong>At Android launch: add Google Sign-In.</strong> Not before — every extra button on the auth sheet costs conversion on iOS.</li>
+  <li><strong>No passwords, ever.</strong> Removes the reset flow, credential-stuffing exposure, "forgot password" support burden, and one full screen of first-run friction. For a ≤8 hr/week founder, no-passwords is an ops decision as much as a UX one.</li>
+  <li><strong>Data collected at signup: the auth identifier. Nothing else.</strong> No name field (display name is auto-generated pseudonym, editable later for community), no phone number, no demographics. Every field we don't ask for is conversion we keep and breach surface we don't carry.</li>
+</ul>
+
+<h3>Copy &amp; trust framing on the auth sheet</h3>
+<ul>
+  <li>Header: "Save your setup" (benefit), never "Create an account" (chore).</li>
+  <li>Three benefit bullets max: keeps your scripts &amp; progress · works across devices · your free SOS flows follow you.</li>
+  <li>Inline privacy promise, plain language, one line: <em>"We never collect anything about your child. Your moments are yours."</em> Link to the full plain-language privacy page (PREG-P0-006 asset). For this audience this line is expected to <em>raise</em> conversion; §8 tests it rather than assumes it.</li>
+  <li>Decline: "Not now — stay anonymous" with honest fine print: "Your data stays on this account; sign up any time to protect it if you switch phones."</li>
+</ul>
+
+<h3>Account edge cases to design up front (cheaper now than as support tickets)</h3>
+<ul>
+  <li><strong>Anonymous user gets a new phone:</strong> unclaimed data is genuinely unrecoverable — say so honestly at every decline moment (see fine print above) rather than burying it.</li>
+  <li><strong>Sign in with Apple, then deletes the app, then reinstalls:</strong> Apple returns the user's name/email only on first authorization; the flow must never depend on those fields.</li>
+  <li><strong>Same email via Apple private relay and via direct email OTP:</strong> two identities, one human. Accept it in v1 (document as known limitation); account-merge is explicitly out of scope until it appears in real support volume.</li>
+  <li><strong>Account deletion:</strong> in-app, self-serve, required by App Store Guideline 5.1.1(v). One screen in settings, hard-deletes Supabase user + rows, confirmation email if claimed. Build it in the same PR as auth — retrofitting deletion is always worse.</li>
+  <li><strong>Returning user on Step 1:</strong> "I already have an account" → same passwordless sheet in sign-in mode → skips straight to home (no re-onboarding).</li>
+</ul>
+
+<h2 class="sec" id="s5"><span class="num">5.</span>Permissions strategy (the asks that aren't account creation)</h2>
+<ul>
+  <li><strong>Notifications: never in first-run.</strong> Ask contextually at the <em>end of the first real SOS check-in</em>, with a pre-permission screen that states the actual contract: "One idea a week, and your repair script when you need it. No streaks, no guilt, no 'we miss you.'" Contextual + pre-primed notification asks convert 2–3× cold first-run asks, and a denied iOS prompt is nearly unrecoverable — we get one shot, so we spend it where the value is proven.</li>
+  <li><strong>Widget/lock-screen (not a permission, but an ask):</strong> Step 4 as designed; the highest-value "permission" we have.</li>
+  <li><strong>Nothing else.</strong> No location, no contacts, no ATT/ad-tracking prompt ever (no ad identifiers per §9 of master plan — which also keeps the App Privacy label clean, itself a conversion asset on the product page).</li>
+</ul>
+
+<h2 class="sec" id="s6"><span class="num">6.</span>Special entry paths</h2>
+<ul>
+  <li><strong>Partner referral ("Converted Chris," PREG-P3-033):</strong> deep link from a shared script must open <em>that script</em> first — the thing his partner wanted him to see — then run an abbreviated onboarding (Step 3's rehearsal offer + Step 5's account offer; skip Step 2, inheriting the sharer's flashpoint context). Referral traffic that lands on a generic welcome screen wastes the warmest acquisition channel in the plan.</li>
+  <li><strong>Waitlist/beta cohort (Phase 2):</strong> arrive via invite link with email pre-verified → skip the auth sheet entirely, land at Step 1 with account pre-claimed. Beta friction is pure loss; there's nothing to learn from it.</li>
+  <li><strong>Web-prototype veterans (PREG-P0-003):</strong> if the smoke-test collected emails, honor them: "Welcome back — pick up where you left off" variant of Step 1.</li>
+</ul>
+
+<h2 class="sec" id="s7"><span class="num">7.</span>Where monetization touches onboarding (and where it doesn't)</h2>
+<ul>
+  <li><strong>v1/beta (Phase 1–2): no paywall anywhere in first-run.</strong> The paywall ships in PREG-P2-024 and lives at <em>free-tier boundary moments</em> (4th SOS of the month) and <em>post-value moments</em> (after a completed real SOS with a good check-in), not at install. Rationale: the free tier (3 SOS/month + repair scripts) <em>is</em> the onboarding for the paid product, and the PMF evidence we need in Phase 2 is uncontaminated by paywall-induced churn.</li>
+  <li><strong>Phase 3 experiment, not assumption:</strong> consumer-wellness convention says an onboarding paywall (post-Step-3, pre-home) often wins on revenue-per-install despite hurting activation. Given that our whole thesis says activation (H1) is the scarce resource, the default stays <em>no onboarding paywall</em> — but we A/B it honestly at Phase 3 scale rather than religion-ing it (§8, experiment E7). If it wins on 90-day LTV without killing week-1 SOS usage, convention beats thesis and we take the money.</li>
+  <li><strong>Founding-member offer (beta):</strong> shown as a home-screen card, never as an onboarding interstitial.</li>
+</ul>
+
+<h2 class="sec" id="s8"><span class="num">8.</span>Measurement &amp; experimentation</h2>
+
+<h3>Funnel event contract (extends PREG-P1-014's ~12-event budget; these are 10 of them)</h3>
+<table>
+  <thead><tr><th>Event</th><th>Properties</th><th>Funnel role</th></tr></thead>
+  <tbody>
+    <tr><td><code>first_open</code></td><td>acquisition source (if attributable organically)</td><td>Funnel top</td></tr>
+    <tr><td><code>onboarding_step_viewed</code> / <code>_completed</code></td><td>step id, skip?</td><td>Per-screen drop-off</td></tr>
+    <tr><td><code>personalization_answered</code></td><td>age band, flashpoint (pseudonymous)</td><td>Powers content + E2</td></tr>
+    <tr><td><code>practice_breather_completed</code></td><td>duration</td><td><strong>Onboarding activation event</strong></td></tr>
+    <tr><td><code>widget_prompt_outcome</code></td><td>installed / later / skipped</td><td>H1 friction signal</td></tr>
+    <tr><td><code>account_prompt_outcome</code></td><td>method / declined, surface (which of the 4 moments)</td><td>Auth conversion by context</td></tr>
+    <tr><td><code>account_claimed</code></td><td>method, days-since-install</td><td>Anonymous→claimed lag</td></tr>
+    <tr><td><code>notification_prompt_outcome</code></td><td>pre-prompt shown?, OS grant?</td><td>One-shot ask hit rate</td></tr>
+    <tr><td><code>first_real_sos_started</code></td><td>hours-since-install, entry (widget/app)</td><td><strong>The</strong> activation metric</td></tr>
+    <tr><td><code>onboarding_abandoned</code></td><td>last step viewed</td><td>Where we bleed</td></tr>
+  </tbody>
+</table>
+
+<h3>Targets (first-run cohort, reviewed weekly during beta)</h3>
+<ul>
+  <li>≥85% reach Step 3; ≥70% complete the practice breather; median first-run duration ≤2:00.</li>
+  <li>≥35% claim an account in first-run; ≥55% by day 7 (across all four surfaces).</li>
+  <li>≥40% install the widget by day 7 (Step 4 + post-SOS re-prompt combined).</li>
+  <li>Onboarding→activation link: practice-breather completers hit the 7-day real-SOS metric at ≥1.5× the rate of skippers (validates the whole §3 design; if this link doesn't show up, the rehearsal thesis is wrong and Step 3 gets redesigned, not defended).</li>
+</ul>
+
+<h3>Experiment backlog, priority order</h3>
+<p>One at a time; beta cohort sizes are small — prefer big-swing variants over button-color tests, and accept directional reads pre-launch.</p>
+<ol>
+  <li><strong>E1 — Account timing:</strong> Step-5 soft gate vs. no first-run offer at all (first offer = progress-view moment). Hypothesis: deferring costs nothing on day-7 claimed rate and improves first-run completion.</li>
+  <li><strong>E2 — Personalization depth:</strong> 2 questions vs. 0 (default script = most common flashpoint from P0 data). Hypothesis: the 2 questions pay for themselves via Step-3 relevance; if not, cut them — the plan's own principle demands it.</li>
+  <li><strong>E3 — Privacy line on auth sheet:</strong> present vs. absent. Validates the trust-as-conversion thesis with data.</li>
+  <li><strong>E4 — Step-3 framing:</strong> "practice now" vs. "see a demo" copy for the rehearsal.</li>
+  <li><strong>E5 — Widget prompt placement:</strong> Step 4 vs. post-first-real-SOS only.</li>
+  <li><strong>E6 — Day-1 message content:</strong> repair script vs. "your script, one tap away" reminder.</li>
+  <li><strong>E7 — (Phase 3 only) onboarding paywall:</strong> per §7, judged on 90-day LTV <em>and</em> week-1 SOS usage together.</li>
+</ol>
+
+<h2 class="sec" id="s9"><span class="num">9.</span>Content, accessibility, and safety requirements (acceptance criteria, not polish)</h2>
+<ul>
+  <li><strong>Copy:</strong> every onboarding string reviewed in the same clinician pass as script content (PREG-P0-007) — onboarding is the first place tone can accidentally shame ("Stop yelling at your kids!" as a hook would convert and betray the product in the same breath). Reading level ≤ grade 6; no parenting-theory jargon before the user has felt the product work.</li>
+  <li><strong>Accessibility:</strong> full VoiceOver labels and logical focus order on every step; all CTAs ≥44pt targets in the bottom half of the screen (one-handed law); breather rehearsal works with audio + haptics for screen-off/eyes-free use; supports Dynamic Type without breaking script cards; WCAG AA contrast on the calm palette (calm palettes chronically fail contrast — check early).</li>
+  <li><strong>Localization posture:</strong> English-only v1, but all strings externalized from day one.</li>
+  <li><strong>Safety:</strong> no free-text in first-run (by design, §3 Step 2) so no crisis-interception surface exists there; the crisis-resources screen is reachable from the auth sheet footer and settings from day one; onboarding never makes claims that cross the "not therapy" line (no "clinically proven," "reviewed by a licensed family therapist" only once PREG-P0-007 is actually true).</li>
+  <li><strong>Offline:</strong> first-run must complete on airplane mode after install (content bundled; anonymous session queues until connectivity). A parent's worst moment doesn't check for signal, and neither does first-run.</li>
+</ul>
+
+<h2 class="sec" id="s10"><span class="num">10.</span>Task breakdown (slots into Phase 1; replaces PREG-P1-013)</h2>
+<p>Ordered; ONB-1 through ONB-4 are the critical path to PREG-P1-017's usability test.</p>
+
+<div class="task">
+  <div class="id">PREG-ONB-001</div>
+  <div><strong>Flow spec &amp; copy deck.</strong> Screen-by-screen spec of §3 with final copy, all states (skip/decline/error/offline), and the returning-user + referral variants (§6). Clinician tone-review included.</div>
+  <div class="exit"><em>Exit:</em> reviewed copy deck, zero TBD strings.</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-002</div>
+  <div><strong>Anonymous-first auth foundation.</strong> Supabase anonymous session on first launch; identity-link upgrade path; Sign in with Apple + email OTP; account deletion screen; data-continuity test (personalization + meter survive upgrade).</div>
+  <div class="exit"><em>Exit:</em> claim/decline/delete all pass on device; no logged-out state exists.</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-003</div>
+  <div><strong>First-run flow build.</strong> Steps 1–6 including the real breather in rehearsal mode and the widget walkthrough. One-handed + ≤2:00 median are acceptance criteria.</div>
+  <div class="exit"><em>Exit:</em> stranger completes first-run unaided in under 2 minutes (feeds PREG-P1-017).</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-004</div>
+  <div><strong>Funnel instrumentation.</strong> §8's event contract wired and reconciled with PREG-P1-014's budget; funnel dashboard with per-step drop-off before beta starts.</div>
+  <div class="exit"><em>Exit:</em> dashboard shows a complete synthetic-user funnel.</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-005</div>
+  <div><strong>Contextual ask system.</strong> Post-SOS notification pre-prompt, widget re-prompt, progress-view account prompt, message frequency cap.</div>
+  <div class="exit"><em>Exit:</em> all four contextual surfaces fire exactly once each in a scripted QA run.</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-006</div>
+  <div><strong>Special entry paths.</strong> Referral deep-link → script-first onboarding; beta invite pre-claimed path.</div>
+  <div class="exit"><em>Exit:</em> both paths land correctly from cold install.</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-007</div>
+  <div><strong>Onboarding usability test (n=8, merged into PREG-P1-017).</strong> Cold parents, one-handed, phone in hand while holding a bag (simulate the real ergonomic): observe Steps 1–6 + widget install; fix top 3 failures; re-test.</div>
+  <div class="exit"><em>Exit:</em> ≥7/8 complete unaided; widget install success ≥5/8.</div>
+</div>
+<div class="task">
+  <div class="id">PREG-ONB-008</div>
+  <div><strong>Experiment harness (Phase 2 gate).</strong> Assignment + exposure logging sufficient to run E1–E6 sequentially on the beta cohort.</div>
+  <div class="exit"><em>Exit:</em> E1 configured and dry-run.</div>
+</div>
+
+<h2 class="sec" id="s11"><span class="num">11.</span>Risks specific to this flow</h2>
+<ul>
+  <li><strong>The rehearsal doesn't predict real usage</strong> (Step-3 thesis fails): the §8 correlation check catches it in beta; fallback is shifting onboarding weight to the widget + day-1 repair message (i.e., optimize for <em>entry-point presence</em> over <em>muscle memory</em>).</li>
+  <li><strong>Anonymous-first hides the audience from us</strong> (no email = no re-engagement channel for decliners): accepted trade-off; mitigated by the four contextual claim surfaces and by notifications as the fallback channel. If day-7 claimed rate lands under ~40%, E1's "defer everything" arm is the wrong bet — revisit.</li>
+  <li><strong>Widget setup friction on iOS</strong> (multi-step, OS-controlled, changes across iOS versions): budget for re-shooting the walkthrough at every major iOS release; App Intents/Shortcuts as the secondary entry.</li>
+  <li><strong>Apple review risk:</strong> low by design (soft gate satisfies 5.1.1, Sign in with Apple satisfies 4.8, in-app deletion satisfies 5.1.1(v)) — but the anonymous free-tier meter must not look like it's dodging IAP rules when the paywall arrives; keep metering logic server-side by Phase 2.</li>
+  <li><strong>Scope creep back toward a tour:</strong> every future feature will ask to "just add one onboarding screen." Principle 2 (§2) is the standing answer; the ≤2:00 median is the enforcement mechanism — it's a tracked metric, so regressions are visible.</li>
+</ul>
+
+<h2 class="sec" id="s12"><span class="num">12.</span>Open questions (decide before PREG-ONB-001 exits)</h2>
+<ol>
+  <li>Does Step 2's flashpoint list come from PREG-P0-001's interview taxonomy or ship with a provisional top-5? (Dependency: onboarding copy can't finalize before the taxonomy does.)</li>
+  <li>Is the practice breather the full 60s production asset or a 30s "trailer" cut? (Test in ONB-007 before optimizing.)</li>
+  <li>Pseudonym generation style for community-ready display names — decide at ONB-002 so the account model doesn't need a migration later.</li>
+  <li>Do we want a "how did you find us?" one-tap attribution question at Step 5 decline/complete? It's a third question (violates the 2-question ceiling) but may be the only acquisition signal available with no ad identifiers. Recommend: <strong>no in v1</strong>; revisit if Phase 3 channel decisions are starved for data.</li>
+</ol>
+
+<footer>
+  Steady — Onboarding &amp; Account Creation Redesign Plan · Generated from <code>ONBOARDING_REDESIGN_PLAN.md</code> · Plan only, not yet executed.
+</footer>
+
+</div>
+</body>
+</html>
