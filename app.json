@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Lighthouse",
+    "slug": "lighthouse",
+    "scheme": "lighthouse",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.jeremyintal.lighthouse"
+    },
+    "android": {
+      "package": "com.jeremyintal.lighthouse",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
