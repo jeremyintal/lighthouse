@@ -9,11 +9,17 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.jeremyintal.lighthouse"
+      "bundleIdentifier": "com.jeremyintal.lighthouse",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Lighthouse uses the microphone only to detect a gentle exhale for the balloon breathing exercise."
+      }
     },
     "android": {
       "package": "com.jeremyintal.lighthouse",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",

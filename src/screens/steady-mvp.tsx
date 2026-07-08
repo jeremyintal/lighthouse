@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Pressable, ScrollView, TextInput, View } from "react-native";
 import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
@@ -10,6 +10,8 @@ type Screen = "morning" | "balloon" | "evening";
 
 const morningQuestion = "What is one small win you want to notice today?";
 const eveningQuestion = "What small win happened today, even if the day was hard?";
+const blowThreshold = 0.085;
+const blowHoldMs = 850;
 
 export function SteadyMvp() {
   const [screen, setScreen] = useState<Screen>("morning");
@@ -38,7 +40,7 @@ export function SteadyMvp() {
         {screen === "morning" && (
           <MorningScreen value={morningReflection} onChange={setMorningReflection} onBreathe={() => setScreen("balloon")} />
         )}
-        {screen === "balloon" && <BalloonScreen onEvening={() => setScreen("evening")} />}
+        {screen === "balloon" && <BalloonScreen />}
         {screen === "evening" && (
           <EveningScreen
             morningReflection={morningReflection}
@@ -197,10 +199,19 @@ function ReflectionInput({
   );
 }
 
-function BalloonScreen({ onEvening }: { onEvening: () => void }) {
+function BalloonScreen() {
   const [balloonScale] = useState(() => new Animated.Value(0.88));
   const [float] = useState(() => new Animated.Value(0));
   const [breaths, setBreaths] = useState(0);
+  const [micActive, setMicActive] = useState(false);
+  const [micMessage, setMicMessage] = useState("Tap the button, or turn on the mic and blow gently.");
+  const [blowLevel, setBlowLevel] = useState(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const blowStartedAtRef = useRef<number | null>(null);
+  const lastInflatedAtRef = useRef(0);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -232,6 +243,14 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
     }).start();
   };
 
+  const inflateFromBlow = () => {
+    const now = Date.now();
+    if (now - lastInflatedAtRef.current < 1200) return;
+    lastInflatedAtRef.current = now;
+    inflate();
+    setMicMessage("Nice slow exhale. The balloon heard you.");
+  };
+
   const reset = () => {
     setBreaths(0);
     Animated.spring(balloonScale, {
@@ -240,7 +259,96 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
       stiffness: 70,
       useNativeDriver: true,
     }).start();
+    blowStartedAtRef.current = null;
+    lastInflatedAtRef.current = 0;
+    setMicMessage(micActive ? "Blow gently toward the microphone." : "Tap the button, or turn on the mic and blow gently.");
   };
+
+  const stopMic = () => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    audioContextRef.current?.close().catch(() => undefined);
+    audioContextRef.current = null;
+    analyserRef.current = null;
+    blowStartedAtRef.current = null;
+    setBlowLevel(0);
+    setMicActive(false);
+    setMicMessage("Microphone is off. You can still tap to add a breath.");
+  };
+
+  const startMic = async () => {
+    if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setMicMessage("Microphone blowing is not available here yet. Tap still works.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+      const AudioContextConstructor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextConstructor) {
+        stream.getTracks().forEach((track) => track.stop());
+        setMicMessage("This browser cannot read microphone volume. Tap still works.");
+        return;
+      }
+
+      const audioContext = new AudioContextConstructor();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.82;
+      source.connect(analyser);
+
+      streamRef.current = stream;
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+      setMicActive(true);
+      setMicMessage("Blow gently toward the microphone.");
+
+      const data = new Uint8Array(analyser.fftSize);
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (const value of data) {
+          const normalized = (value - 128) / 128;
+          sum += normalized * normalized;
+        }
+        const rms = Math.sqrt(sum / data.length);
+        const level = Math.min(1, rms / 0.22);
+        setBlowLevel(level);
+
+        const now = Date.now();
+        if (rms > blowThreshold) {
+          blowStartedAtRef.current ??= now;
+          setMicMessage("Keep the exhale slow.");
+          if (now - blowStartedAtRef.current >= blowHoldMs) {
+            blowStartedAtRef.current = null;
+            inflateFromBlow();
+          }
+        } else {
+          blowStartedAtRef.current = null;
+          if (micActive) setMicMessage("Blow gently toward the microphone.");
+        }
+
+        frameRef.current = requestAnimationFrame(tick);
+      };
+
+      frameRef.current = requestAnimationFrame(tick);
+    } catch {
+      setMicMessage("Microphone permission was not granted. Tap still works.");
+    }
+  };
+
+  useEffect(() => stopMic, []);
 
   const translateY = float.interpolate({
     inputRange: [0, 1],
@@ -258,10 +366,10 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
           borderCurve: "continuous",
           borderRadius: radii.xl,
           boxShadow: shadows.raised,
-          gap: spacing.xl,
-          minHeight: 480,
+          gap: spacing.lg,
+          minHeight: 440,
           justifyContent: "space-between",
-          padding: spacing.xl,
+          padding: spacing.lg,
         }}
       >
         <View style={{ alignItems: "center", gap: spacing.sm }}>
@@ -272,12 +380,12 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
             Fill it slowly.
           </AppText>
           <AppText color="rgba(255,255,255,0.78)" style={{ textAlign: "center" }}>
-            Inhale through your nose. Exhale like you are gently filling a balloon. Tap once for each slow breath.
+            Inhale through your nose. Exhale slowly toward the microphone to fill the balloon.
           </AppText>
         </View>
 
         <Pressable accessibilityRole="button" accessibilityLabel="Inflate balloon" onPress={inflate} style={{ alignItems: "center" }}>
-          <View style={{ alignItems: "center", height: 248, justifyContent: "center", width: 248 }}>
+          <View style={{ alignItems: "center", height: 214, justifyContent: "center", width: 224 }}>
             <Animated.View
               style={{
                 alignItems: "center",
@@ -287,9 +395,9 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
               <Image
                 source={playfulBalloon}
                 style={{
-                  height: 310,
+                  height: 266,
                   resizeMode: "contain",
-                  width: 244,
+                  width: 210,
                 }}
               />
             </Animated.View>
@@ -297,11 +405,36 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
         </Pressable>
 
         <View style={{ alignSelf: "stretch", gap: spacing.md }}>
+          <View style={{ gap: spacing.sm }}>
+            <View
+              accessibilityLabel={`Blow level ${Math.round(blowLevel * 100)} percent`}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.18)",
+                borderColor: "rgba(255,255,255,0.34)",
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                height: 12,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.82)",
+                  borderRadius: radii.pill,
+                  height: "100%",
+                  width: `${Math.max(8, blowLevel * 100)}%`,
+                }}
+              />
+            </View>
+            <AppText variant="small" color="rgba(255,255,255,0.82)" style={{ textAlign: "center" }}>
+              {micMessage}
+            </AppText>
+          </View>
+          <Button variant="secondary" onPress={micActive ? stopMic : startMic} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
+            {micActive ? "Turn microphone off" : "Turn microphone on"}
+          </Button>
           <Button variant="secondary" onPress={breaths >= 4 ? reset : inflate} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
             {breaths >= 4 ? "Start again" : "Add one slow breath"}
-          </Button>
-          <Button variant="ghost" onPress={onEvening} textStyle={{ color: "rgba(255,255,255,0.86)" }}>
-            Go to evening reflection
           </Button>
         </View>
       </LinearGradient>
