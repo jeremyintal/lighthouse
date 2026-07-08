@@ -8,8 +8,8 @@ const playfulBalloon = require("../../assets/images/playful-balloon.png");
 
 type Screen = "morning" | "balloon" | "evening";
 
-const morningQuestion = "What is one small win you want to notice today?";
-const eveningQuestion = "What small win happened today, even if the day was hard?";
+const morningQuestion = "What small win will you notice today?";
+const eveningQuestion = "What small win happened today?";
 const blowThreshold = 0.085;
 const blowHoldMs = 850;
 
@@ -84,18 +84,9 @@ function MorningScreen({
   return (
     <>
       <Card tone="accent" style={{ gap: spacing.lg }}>
-        <View style={{ gap: spacing.sm }}>
-          <AppText variant="overline" color={colors.accentStrong}>
-            Begin softly
-          </AppText>
-          <AppText variant="headline">One small win is enough.</AppText>
-          <AppText color={colors.inkSoft}>
-            Before the day asks anything from you, choose one positive thing to notice. Not a goal to perform. Just a place to aim your attention.
-          </AppText>
-        </View>
         <ReflectionInput
           accessibilityLabel="Morning reflection"
-          placeholder="Maybe: one calm goodbye, one patient pause, one laugh."
+          placeholder="One calm goodbye. One patient pause. One laugh."
           question={morningQuestion}
           value={value}
           onChange={onChange}
@@ -103,10 +94,7 @@ function MorningScreen({
       </Card>
 
       <Card tone="surface" style={{ gap: spacing.md }}>
-        <AppText variant="bodyStrong">When the day starts loud</AppText>
-        <AppText color={colors.inkSoft}>
-          Use the balloon for one breath. Inhale gently, then exhale slowly to fill it.
-        </AppText>
+        <AppText variant="bodyStrong">Need a breath?</AppText>
         <Button onPress={onBreathe}>Open the balloon</Button>
       </Card>
     </>
@@ -128,13 +116,7 @@ function EveningScreen({
     <>
       <Card tone="repair" style={{ gap: spacing.lg }}>
         <View style={{ gap: spacing.sm }}>
-          <AppText variant="overline" color={colors.repair}>
-            Close the loop
-          </AppText>
           <AppText variant="headline">Log the small win.</AppText>
-          <AppText color={colors.inkSoft}>
-            The day did not have to be easy to contain something worth keeping. Write one thing that counts.
-          </AppText>
         </View>
         {morningReflection.trim().length > 0 && (
           <Card tone="well" style={{ gap: spacing.xs, padding: spacing.lg }}>
@@ -146,7 +128,7 @@ function EveningScreen({
         )}
         <ReflectionInput
           accessibilityLabel="Evening reflection"
-          placeholder="Maybe: I apologized. I noticed the giggle. I got through bedtime."
+          placeholder="I apologized. I noticed the giggle. I got through bedtime."
           question={eveningQuestion}
           value={value}
           onChange={onChange}
@@ -155,7 +137,6 @@ function EveningScreen({
 
       <Card tone="surface" style={{ gap: spacing.md }}>
         <AppText variant="bodyStrong">Let the day end</AppText>
-        <AppText color={colors.inkSoft}>One breath can mark the boundary between what happened and what you carry.</AppText>
         <Button variant="repair" onPress={onBreathe}>
           Inflate the balloon
         </Button>
@@ -216,7 +197,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
   const [breaths, setBreaths] = useState(0);
   const [collectedThisBalloon, setCollectedThisBalloon] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [micMessage, setMicMessage] = useState("Tap the button, or turn on the mic and blow gently.");
+  const [micMessage, setMicMessage] = useState("Tap or blow gently.");
   const [blowLevel, setBlowLevel] = useState(0);
   const breathsRef = useRef(0);
   const collectedThisBalloonRef = useRef(false);
@@ -263,7 +244,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       collectedThisBalloonRef.current = true;
       setCollectedThisBalloon(true);
       onCollectBalloon();
-      setMicMessage("Fully inflated. Added to your account collection.");
+      setMicMessage("Saved to your collection.");
     }
   };
 
@@ -273,7 +254,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     if (now - lastInflatedAtRef.current < 1200) return;
     lastInflatedAtRef.current = now;
     inflate();
-    setMicMessage("Nice slow exhale. The balloon heard you.");
+    setMicMessage("Nice slow exhale.");
   };
 
   const reset = () => {
@@ -289,7 +270,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     }).start();
     blowStartedAtRef.current = null;
     lastInflatedAtRef.current = 0;
-    setMicMessage(micActive ? "Blow gently toward the microphone." : "Tap the button, or turn on the mic and blow gently.");
+    setMicMessage(micActive ? "Blow gently." : "Tap or blow gently.");
   };
 
   const stopMic = () => {
@@ -305,12 +286,12 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     blowStartedAtRef.current = null;
     setBlowLevel(0);
     setMicActive(false);
-    setMicMessage("Microphone is off. You can still tap to add a breath.");
+    setMicMessage("Mic off. Tap still works.");
   };
 
   const startMic = async () => {
     if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setMicMessage("Microphone blowing is not available here yet. Tap still works.");
+      setMicMessage("Mic unavailable. Tap still works.");
       return;
     }
 
@@ -325,7 +306,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       const AudioContextConstructor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioContextConstructor) {
         stream.getTracks().forEach((track) => track.stop());
-        setMicMessage("This browser cannot read microphone volume. Tap still works.");
+        setMicMessage("Mic unavailable. Tap still works.");
         return;
       }
 
@@ -340,7 +321,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
       setMicActive(true);
-      setMicMessage("Blow gently toward the microphone.");
+      setMicMessage("Blow gently.");
 
       const data = new Uint8Array(analyser.fftSize);
       const tick = () => {
@@ -357,14 +338,14 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
         const now = Date.now();
         if (rms > blowThreshold) {
           blowStartedAtRef.current ??= now;
-          setMicMessage("Keep the exhale slow.");
+          setMicMessage("Keep going.");
           if (now - blowStartedAtRef.current >= blowHoldMs) {
             blowStartedAtRef.current = null;
             inflateFromBlow();
           }
         } else {
           blowStartedAtRef.current = null;
-          if (micActive) setMicMessage("Blow gently toward the microphone.");
+          if (micActive) setMicMessage("Blow gently.");
         }
 
         frameRef.current = requestAnimationFrame(tick);
@@ -372,7 +353,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
 
       frameRef.current = requestAnimationFrame(tick);
     } catch {
-      setMicMessage("Microphone permission was not granted. Tap still works.");
+      setMicMessage("Mic permission needed. Tap still works.");
     }
   };
 
@@ -411,14 +392,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
         }}
       >
         <View style={{ alignItems: "center", gap: spacing.sm }}>
-          <AppText variant="overline" color="rgba(255,255,255,0.72)">
-            Balloon breath
-          </AppText>
           <AppText variant="headline" color="#ffffff" style={{ textAlign: "center" }}>
-            Start empty. Fill it slowly.
-          </AppText>
-          <AppText color="rgba(255,255,255,0.78)" style={{ textAlign: "center" }}>
-            Five slow exhales inflate the balloon. When it is full, it joins your collection.
+            Fill the balloon.
           </AppText>
         </View>
 
@@ -468,7 +443,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
               {collectedThisBalloon ? "Saved. Start another whenever you need it." : `${breaths} of ${maxBreaths} slow breaths`}
             </AppText>
           </View>
-          <View style={{ gap: spacing.sm }}>
+          {micActive && (
+            <View style={{ gap: spacing.sm }}>
             <View
               accessibilityLabel={`Blow level ${Math.round(blowLevel * 100)} percent`}
               style={{
@@ -492,7 +468,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             <AppText variant="small" color="rgba(255,255,255,0.82)" style={{ textAlign: "center" }}>
               {micMessage}
             </AppText>
-          </View>
+            </View>
+          )}
           <Button variant="secondary" onPress={breaths >= maxBreaths ? reset : inflate} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
             {breaths >= maxBreaths ? "Start another balloon" : "Add one slow breath"}
           </Button>
@@ -505,11 +482,9 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       <Card tone="surface" style={{ gap: spacing.md }}>
         <View style={{ flexDirection: "row", gap: spacing.md, justifyContent: "space-between" }}>
           <View style={{ flex: 1, gap: spacing.xs }}>
-            <AppText variant="bodyStrong">Account collection</AppText>
+            <AppText variant="bodyStrong">Collection</AppText>
             <AppText color={colors.inkSoft}>
-              {collectionCount === 0
-                ? "No balloons saved yet. Fill one when you need a reset."
-                : `${collectionCount} ${collectionCount === 1 ? "balloon" : "balloons"} saved from slow breaths.`}
+              {collectionCount === 0 ? "0 saved" : `${collectionCount} saved`}
             </AppText>
           </View>
           <View
