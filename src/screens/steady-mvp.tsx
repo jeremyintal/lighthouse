@@ -4,7 +4,7 @@ import { Animated, Pressable, ScrollView, TextInput, View } from "react-native";
 import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
 
-type Screen = "morning" | "candle" | "evening";
+type Screen = "morning" | "balloon" | "evening";
 
 const morningQuestion = "What is one small win you want to notice today?";
 const eveningQuestion = "What small win happened today, even if the day was hard?";
@@ -15,7 +15,7 @@ export function SteadyMvp() {
   const [eveningReflection, setEveningReflection] = useState("");
 
   const title = useMemo(() => {
-    if (screen === "candle") return "Breathe";
+    if (screen === "balloon") return "Breathe";
     if (screen === "evening") return "Evening";
     return "Morning";
   }, [screen]);
@@ -34,15 +34,15 @@ export function SteadyMvp() {
       >
         <Header title={title} />
         {screen === "morning" && (
-          <MorningScreen value={morningReflection} onChange={setMorningReflection} onBreathe={() => setScreen("candle")} />
+          <MorningScreen value={morningReflection} onChange={setMorningReflection} onBreathe={() => setScreen("balloon")} />
         )}
-        {screen === "candle" && <CandleScreen onEvening={() => setScreen("evening")} />}
+        {screen === "balloon" && <BalloonScreen onEvening={() => setScreen("evening")} />}
         {screen === "evening" && (
           <EveningScreen
             morningReflection={morningReflection}
             value={eveningReflection}
             onChange={setEveningReflection}
-            onBreathe={() => setScreen("candle")}
+            onBreathe={() => setScreen("balloon")}
           />
         )}
       </ScrollView>
@@ -95,9 +95,9 @@ function MorningScreen({
       <Card tone="surface" style={{ gap: spacing.md }}>
         <AppText variant="bodyStrong">When the day starts loud</AppText>
         <AppText color={colors.inkSoft}>
-          Use the candle for one breath. Inhale while it glows. Exhale and blow it out.
+          Use the balloon for one breath. Inhale gently, then exhale slowly to fill it.
         </AppText>
-        <Button onPress={onBreathe}>Open the candle</Button>
+        <Button onPress={onBreathe}>Open the balloon</Button>
       </Card>
     </>
   );
@@ -147,7 +147,7 @@ function EveningScreen({
         <AppText variant="bodyStrong">Let the day end</AppText>
         <AppText color={colors.inkSoft}>One breath can mark the boundary between what happened and what you carry.</AppText>
         <Button variant="repair" onPress={onBreathe}>
-          Blow out the candle
+          Inflate the balloon
         </Button>
       </Card>
     </>
@@ -195,48 +195,60 @@ function ReflectionInput({
   );
 }
 
-function CandleScreen({ onEvening }: { onEvening: () => void }) {
-  const [flame] = useState(() => new Animated.Value(1));
-  const [blownOut, setBlownOut] = useState(false);
+function BalloonScreen({ onEvening }: { onEvening: () => void }) {
+  const [balloonScale] = useState(() => new Animated.Value(0.72));
+  const [float] = useState(() => new Animated.Value(0));
+  const [breaths, setBreaths] = useState(0);
 
   useEffect(() => {
-    if (blownOut) return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(flame, {
-          toValue: 1.12,
-          duration: 2200,
+        Animated.timing(float, {
+          toValue: 1,
+          duration: 2600,
           useNativeDriver: true,
         }),
-        Animated.timing(flame, {
-          toValue: 0.92,
-          duration: 2200,
+        Animated.timing(float, {
+          toValue: 0,
+          duration: 2600,
           useNativeDriver: true,
         }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, [blownOut, flame]);
+  }, [float]);
 
-  const blowOut = () => {
-    setBlownOut(true);
-    Animated.timing(flame, {
-      toValue: 0,
-      duration: 700,
+  const inflate = () => {
+    const nextBreaths = Math.min(breaths + 1, 4);
+    setBreaths(nextBreaths);
+    Animated.spring(balloonScale, {
+      toValue: 0.72 + nextBreaths * 0.11,
+      damping: 12,
+      stiffness: 70,
       useNativeDriver: true,
     }).start();
   };
 
-  const relight = () => {
-    setBlownOut(false);
-    flame.setValue(1);
+  const reset = () => {
+    setBreaths(0);
+    Animated.spring(balloonScale, {
+      toValue: 0.72,
+      damping: 12,
+      stiffness: 70,
+      useNativeDriver: true,
+    }).start();
   };
+
+  const translateY = float.interpolate({
+    inputRange: [0, 1],
+    outputRange: [8, -8],
+  });
 
   return (
     <>
       <LinearGradient
-        colors={["#274d42", "#2f6f5e", "#3d8571"]}
+        colors={["#274d42", "#2f6f5e", "#8ab9aa"]}
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.8, y: 1 }}
         style={{
@@ -252,65 +264,70 @@ function CandleScreen({ onEvening }: { onEvening: () => void }) {
       >
         <View style={{ alignItems: "center", gap: spacing.sm }}>
           <AppText variant="overline" color="rgba(255,255,255,0.72)">
-            One candle breath
+            Balloon breath
           </AppText>
           <AppText variant="headline" color="#ffffff" style={{ textAlign: "center" }}>
-            Inhale. Then let it go.
+            Fill it slowly.
           </AppText>
           <AppText color="rgba(255,255,255,0.78)" style={{ textAlign: "center" }}>
-            Breathe in while the flame moves. Exhale slowly and tap the flame to blow it out.
+            Inhale through your nose. Exhale like you are gently filling a balloon. Tap once for each slow breath.
           </AppText>
         </View>
 
-        <Pressable accessibilityRole="button" accessibilityLabel="Blow out candle" onPress={blowOut} style={{ alignItems: "center" }}>
-          <View style={{ alignItems: "center", height: 260, justifyContent: "flex-end", width: 190 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Inflate balloon" onPress={inflate} style={{ alignItems: "center" }}>
+          <View style={{ alignItems: "center", height: 276, justifyContent: "center", width: 240 }}>
             <Animated.View
               style={{
-                opacity: flame,
-                transform: [{ scale: flame }],
+                alignItems: "center",
+                transform: [{ translateY }, { scale: balloonScale }],
               }}
             >
               <LinearGradient
-                colors={["#fff7bd", "#f3b562", "#c96b3f"]}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
+                colors={["#f6e8df", "#d99a79", "#b4633f"]}
+                start={{ x: 0.18, y: 0.08 }}
+                end={{ x: 0.82, y: 1 }}
                 style={{
-                  borderBottomLeftRadius: 34,
-                  borderBottomRightRadius: 34,
-                  borderTopLeftRadius: 42,
-                  borderTopRightRadius: 42,
-                  height: 102,
-                  marginBottom: -8,
-                  transform: [{ rotate: "-7deg" }],
-                  width: 62,
+                  alignItems: "center",
+                  borderColor: "rgba(255,255,255,0.44)",
+                  borderRadius: 95,
+                  borderWidth: 1,
+                  height: 188,
+                  justifyContent: "flex-start",
+                  paddingTop: 28,
+                  width: 166,
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.34)",
+                    borderRadius: radii.pill,
+                    height: 30,
+                    opacity: 0.76,
+                    width: 44,
+                  }}
+                />
+              </LinearGradient>
+              <View
+                style={{
+                  borderLeftColor: "transparent",
+                  borderLeftWidth: 14,
+                  borderRightColor: "transparent",
+                  borderRightWidth: 14,
+                  borderTopColor: "#b4633f",
+                  borderTopWidth: 24,
+                  height: 0,
+                  marginTop: -2,
+                  width: 0,
                 }}
               />
+              <View style={{ backgroundColor: "rgba(255,255,255,0.74)", height: 72, marginTop: -2, width: 2 }} />
             </Animated.View>
-            <View
-              style={{
-                backgroundColor: "#fffdf8",
-                borderColor: "rgba(255,255,255,0.5)",
-                borderRadius: 22,
-                borderWidth: 1,
-                height: 154,
-                width: 92,
-              }}
-            />
-            <View
-              style={{
-                backgroundColor: "rgba(20, 35, 31, 0.22)",
-                borderRadius: radii.pill,
-                height: 18,
-                marginTop: -8,
-                width: 124,
-              }}
-            />
           </View>
         </Pressable>
 
         <View style={{ alignSelf: "stretch", gap: spacing.md }}>
-          <Button variant="secondary" onPress={blownOut ? relight : blowOut} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
-            {blownOut ? "Light it again" : "Blow it out"}
+          <Button variant="secondary" onPress={breaths >= 4 ? reset : inflate} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
+            {breaths >= 4 ? "Start again" : "Add one slow breath"}
           </Button>
           <Button variant="ghost" onPress={onEvening} textStyle={{ color: "rgba(255,255,255,0.86)" }}>
             Go to evening reflection
@@ -320,7 +337,7 @@ function CandleScreen({ onEvening }: { onEvening: () => void }) {
 
       <Card tone="well" style={{ gap: spacing.sm }}>
         <AppText variant="bodyStrong">Use it anytime.</AppText>
-        <AppText color={colors.inkSoft}>A candle is simple on purpose. It gives your body one clear job: slow the exhale.</AppText>
+        <AppText color={colors.inkSoft}>A balloon is simple on purpose. It gives your body one clear job: make the exhale slow and gentle.</AppText>
       </Card>
     </>
   );
@@ -329,7 +346,7 @@ function CandleScreen({ onEvening }: { onEvening: () => void }) {
 function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Screen) => void }) {
   const tabs: { label: string; screen: Screen }[] = [
     { label: "Morning", screen: "morning" },
-    { label: "Candle", screen: "candle" },
+    { label: "Balloon", screen: "balloon" },
     { label: "Evening", screen: "evening" },
   ];
 

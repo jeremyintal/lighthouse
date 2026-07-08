@@ -2,7 +2,7 @@
 
 Planning, design system, and MVP app materials for a parent emotion regulation app currently using the working title **Steady**.
 
-The project explores a mobile app that helps parents build a daily ritual of becoming 1% steadier: one positive morning question, one evening small-win reflection, and a candle-breathing moment for regulation.
+The project explores a mobile app that helps parents build a daily ritual of becoming 1% steadier: one positive morning question, one evening small-win reflection, and a playful balloon-breathing moment for regulation.
 
 ## Current Artifacts
 
