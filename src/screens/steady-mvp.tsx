@@ -6,7 +6,7 @@ import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
 
 const playfulBalloon = require("../../assets/images/playful-balloon.png");
 
-type Screen = "morning" | "balloon" | "evening";
+type Screen = "home" | "journal" | "breather";
 
 const morningQuestion = "What small win will you notice today?";
 const eveningQuestion = "What small win happened today?";
@@ -14,15 +14,15 @@ const blowThreshold = 0.085;
 const blowHoldMs = 850;
 
 export function SteadyMvp() {
-  const [screen, setScreen] = useState<Screen>("morning");
+  const [screen, setScreen] = useState<Screen>("home");
   const [morningReflection, setMorningReflection] = useState("");
   const [eveningReflection, setEveningReflection] = useState("");
   const [balloonCollectionCount, setBalloonCollectionCount] = useState(0);
 
   const title = useMemo(() => {
-    if (screen === "balloon") return "Breathe";
-    if (screen === "evening") return "Evening";
-    return "Morning";
+    if (screen === "journal") return "Journal";
+    if (screen === "breather") return "Breather";
+    return "Home";
   }, [screen]);
 
   return (
@@ -38,21 +38,26 @@ export function SteadyMvp() {
         }}
       >
         <Header title={title} />
-        {screen === "morning" && (
-          <MorningScreen value={morningReflection} onChange={setMorningReflection} onBreathe={() => setScreen("balloon")} />
+        {screen === "home" && (
+          <HomeScreen
+            morningReflection={morningReflection}
+            onBreathe={() => setScreen("breather")}
+            onJournal={() => setScreen("journal")}
+          />
         )}
-        {screen === "balloon" && (
+        {screen === "journal" && (
+          <JournalScreen
+            eveningReflection={eveningReflection}
+            morningReflection={morningReflection}
+            onBreathe={() => setScreen("breather")}
+            onEveningChange={setEveningReflection}
+            onMorningChange={setMorningReflection}
+          />
+        )}
+        {screen === "breather" && (
           <BalloonScreen
             collectionCount={balloonCollectionCount}
             onCollectBalloon={() => setBalloonCollectionCount((count) => count + 1)}
-          />
-        )}
-        {screen === "evening" && (
-          <EveningScreen
-            morningReflection={morningReflection}
-            value={eveningReflection}
-            onChange={setEveningReflection}
-            onBreathe={() => setScreen("balloon")}
           />
         )}
       </ScrollView>
@@ -72,14 +77,49 @@ function Header({ title }: { title: string }) {
   );
 }
 
-function MorningScreen({
-  value,
-  onChange,
+function HomeScreen({
+  morningReflection,
   onBreathe,
+  onJournal,
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  morningReflection: string;
   onBreathe: () => void;
+  onJournal: () => void;
+}) {
+  const hasMorningReflection = morningReflection.trim().length > 0;
+
+  return (
+    <>
+      <Card tone="accent" style={{ gap: spacing.lg }}>
+        <View style={{ gap: spacing.sm }}>
+          <AppText variant="bodyStrong">{morningQuestion}</AppText>
+          <AppText color={colors.inkSoft}>
+            {hasMorningReflection ? morningReflection : "Start with one small thing worth noticing."}
+          </AppText>
+        </View>
+        <Button onPress={onJournal}>{hasMorningReflection ? "Edit journal" : "Open journal"}</Button>
+      </Card>
+
+      <Card tone="surface" style={{ gap: spacing.md }}>
+        <AppText variant="bodyStrong">Need a breath?</AppText>
+        <Button onPress={onBreathe}>Open breather</Button>
+      </Card>
+    </>
+  );
+}
+
+function JournalScreen({
+  eveningReflection,
+  morningReflection,
+  onBreathe,
+  onEveningChange,
+  onMorningChange,
+}: {
+  eveningReflection: string;
+  morningReflection: string;
+  onBreathe: () => void;
+  onEveningChange: (value: string) => void;
+  onMorningChange: (value: string) => void;
 }) {
   return (
     <>
@@ -88,57 +128,25 @@ function MorningScreen({
           accessibilityLabel="Morning reflection"
           placeholder="One calm goodbye. One patient pause. One laugh."
           question={morningQuestion}
-          value={value}
-          onChange={onChange}
+          value={morningReflection}
+          onChange={onMorningChange}
         />
       </Card>
 
-      <Card tone="surface" style={{ gap: spacing.md }}>
-        <AppText variant="bodyStrong">Need a breath?</AppText>
-        <Button onPress={onBreathe}>Open the balloon</Button>
-      </Card>
-    </>
-  );
-}
-
-function EveningScreen({
-  morningReflection,
-  value,
-  onChange,
-  onBreathe,
-}: {
-  morningReflection: string;
-  value: string;
-  onChange: (value: string) => void;
-  onBreathe: () => void;
-}) {
-  return (
-    <>
       <Card tone="repair" style={{ gap: spacing.lg }}>
-        <View style={{ gap: spacing.sm }}>
-          <AppText variant="headline">Log the small win.</AppText>
-        </View>
-        {morningReflection.trim().length > 0 && (
-          <Card tone="well" style={{ gap: spacing.xs, padding: spacing.lg }}>
-            <AppText variant="overline" color={colors.inkSoft}>
-              This morning
-            </AppText>
-            <AppText color={colors.inkSoft}>{morningReflection}</AppText>
-          </Card>
-        )}
         <ReflectionInput
           accessibilityLabel="Evening reflection"
           placeholder="I apologized. I noticed the giggle. I got through bedtime."
           question={eveningQuestion}
-          value={value}
-          onChange={onChange}
+          value={eveningReflection}
+          onChange={onEveningChange}
         />
       </Card>
 
       <Card tone="surface" style={{ gap: spacing.md }}>
-        <AppText variant="bodyStrong">Let the day end</AppText>
+        <AppText variant="bodyStrong">Need a reset?</AppText>
         <Button variant="repair" onPress={onBreathe}>
-          Inflate the balloon
+          Open breather
         </Button>
       </Card>
     </>
@@ -550,9 +558,9 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
 
 function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Screen) => void }) {
   const tabs: { label: string; screen: Screen }[] = [
-    { label: "Morning", screen: "morning" },
-    { label: "Balloon", screen: "balloon" },
-    { label: "Evening", screen: "evening" },
+    { label: "Home", screen: "home" },
+    { label: "Journal", screen: "journal" },
+    { label: "Breather", screen: "breather" },
   ];
 
   return (
