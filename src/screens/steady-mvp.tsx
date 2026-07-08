@@ -4,7 +4,8 @@ import { Animated, Image, Pressable, ScrollView, TextInput, View } from "react-n
 import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
 
-const playfulBalloon = require("../../assets/images/playful-balloon.png");
+const realisticBalloon = require("../../assets/images/realistic-balloon.png");
+const deflatedBalloon = require("../../assets/images/deflated-balloon.png");
 
 type Screen = "home" | "journal" | "breather";
 
@@ -196,11 +197,9 @@ function ReflectionInput({
 
 function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount: number; onCollectBalloon: () => void }) {
   const maxBreaths = 5;
-  const deflatedScale = 0.24;
-  const fullScale = 1;
-  const scaleForBreath = (count: number) => deflatedScale + (Math.min(count, maxBreaths) / maxBreaths) * (fullScale - deflatedScale);
+  const progressForBreath = (count: number) => Math.min(count, maxBreaths) / maxBreaths;
 
-  const [balloonScale] = useState(() => new Animated.Value(deflatedScale));
+  const [balloonProgress] = useState(() => new Animated.Value(0));
   const [float] = useState(() => new Animated.Value(0));
   const [breaths, setBreaths] = useState(0);
   const [collectedThisBalloon, setCollectedThisBalloon] = useState(false);
@@ -241,8 +240,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     const nextBreaths = Math.min(breathsRef.current + 1, maxBreaths);
     breathsRef.current = nextBreaths;
     setBreaths(nextBreaths);
-    Animated.spring(balloonScale, {
-      toValue: scaleForBreath(nextBreaths),
+    Animated.spring(balloonProgress, {
+      toValue: progressForBreath(nextBreaths),
       damping: 12,
       stiffness: 70,
       useNativeDriver: true,
@@ -270,8 +269,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     collectedThisBalloonRef.current = false;
     setBreaths(0);
     setCollectedThisBalloon(false);
-    Animated.spring(balloonScale, {
-      toValue: deflatedScale,
+    Animated.spring(balloonProgress, {
+      toValue: 0,
       damping: 12,
       stiffness: 70,
       useNativeDriver: true,
@@ -371,13 +370,21 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     inputRange: [0, 1],
     outputRange: [8, -8],
   });
-  const balloonScaleX = balloonScale.interpolate({
-    inputRange: [deflatedScale, fullScale],
-    outputRange: [0.7, 1],
+  const deflatedOpacity = balloonProgress.interpolate({
+    inputRange: [0, 0.45, 1],
+    outputRange: [1, 0.4, 0],
   });
-  const balloonScaleY = balloonScale.interpolate({
-    inputRange: [deflatedScale, fullScale],
-    outputRange: [0.16, 1],
+  const deflatedAssetScale = balloonProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.7, 0.92],
+  });
+  const inflatedOpacity = balloonProgress.interpolate({
+    inputRange: [0, 0.2, 1],
+    outputRange: [0, 0.45, 1],
+  });
+  const inflatedAssetScale = balloonProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.42, 1],
   });
   const breathProgress = breaths / maxBreaths;
   const collectionPreviewCount = Math.min(collectionCount, 9);
@@ -410,11 +417,30 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             <Animated.View
               style={{
                 alignItems: "center",
-                transform: [{ translateY }, { scaleX: balloonScaleX }, { scaleY: balloonScaleY }],
+                opacity: deflatedOpacity,
+                position: "absolute",
+                transform: [{ translateY }, { scale: deflatedAssetScale }],
               }}
             >
               <Image
-                source={playfulBalloon}
+                source={deflatedBalloon}
+                style={{
+                  height: 208,
+                  resizeMode: "contain",
+                  width: 136,
+                }}
+              />
+            </Animated.View>
+            <Animated.View
+              style={{
+                alignItems: "center",
+                opacity: inflatedOpacity,
+                position: "absolute",
+                transform: [{ translateY }, { scale: inflatedAssetScale }],
+              }}
+            >
+              <Image
+                source={realisticBalloon}
                 style={{
                   height: 266,
                   resizeMode: "contain",
@@ -525,7 +551,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             Array.from({ length: collectionPreviewCount }).map((_, index) => (
               <Image
                 key={index}
-                source={playfulBalloon}
+                source={realisticBalloon}
                 style={{
                   height: 40,
                   resizeMode: "contain",
