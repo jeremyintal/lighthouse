@@ -1,8 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useMemo, useState } from "react";
-import { Animated, Pressable, ScrollView, TextInput, View } from "react-native";
+import { Animated, Image, Pressable, ScrollView, TextInput, View } from "react-native";
 import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
+
+const playfulBalloon = require("../../assets/images/playful-balloon.png");
 
 type Screen = "morning" | "balloon" | "evening";
 
@@ -196,7 +198,7 @@ function ReflectionInput({
 }
 
 function BalloonScreen({ onEvening }: { onEvening: () => void }) {
-  const [balloonScale] = useState(() => new Animated.Value(0.72));
+  const [balloonScale] = useState(() => new Animated.Value(0.88));
   const [float] = useState(() => new Animated.Value(0));
   const [breaths, setBreaths] = useState(0);
 
@@ -223,7 +225,7 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
     const nextBreaths = Math.min(breaths + 1, 4);
     setBreaths(nextBreaths);
     Animated.spring(balloonScale, {
-      toValue: 0.72 + nextBreaths * 0.11,
+      toValue: 0.88 + nextBreaths * 0.08,
       damping: 12,
       stiffness: 70,
       useNativeDriver: true,
@@ -233,7 +235,7 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
   const reset = () => {
     setBreaths(0);
     Animated.spring(balloonScale, {
-      toValue: 0.72,
+      toValue: 0.88,
       damping: 12,
       stiffness: 70,
       useNativeDriver: true,
@@ -256,10 +258,10 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
           borderCurve: "continuous",
           borderRadius: radii.xl,
           boxShadow: shadows.raised,
-          gap: spacing.xxl,
-          minHeight: 520,
+          gap: spacing.xl,
+          minHeight: 480,
           justifyContent: "space-between",
-          padding: spacing.xxl,
+          padding: spacing.xl,
         }}
       >
         <View style={{ alignItems: "center", gap: spacing.sm }}>
@@ -275,52 +277,21 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
         </View>
 
         <Pressable accessibilityRole="button" accessibilityLabel="Inflate balloon" onPress={inflate} style={{ alignItems: "center" }}>
-          <View style={{ alignItems: "center", height: 276, justifyContent: "center", width: 240 }}>
+          <View style={{ alignItems: "center", height: 248, justifyContent: "center", width: 248 }}>
             <Animated.View
               style={{
                 alignItems: "center",
                 transform: [{ translateY }, { scale: balloonScale }],
               }}
             >
-              <LinearGradient
-                colors={["#f6e8df", "#d99a79", "#b4633f"]}
-                start={{ x: 0.18, y: 0.08 }}
-                end={{ x: 0.82, y: 1 }}
+              <Image
+                source={playfulBalloon}
                 style={{
-                  alignItems: "center",
-                  borderColor: "rgba(255,255,255,0.44)",
-                  borderRadius: 95,
-                  borderWidth: 1,
-                  height: 188,
-                  justifyContent: "flex-start",
-                  paddingTop: 28,
-                  width: 166,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.34)",
-                    borderRadius: radii.pill,
-                    height: 30,
-                    opacity: 0.76,
-                    width: 44,
-                  }}
-                />
-              </LinearGradient>
-              <View
-                style={{
-                  borderLeftColor: "transparent",
-                  borderLeftWidth: 14,
-                  borderRightColor: "transparent",
-                  borderRightWidth: 14,
-                  borderTopColor: "#b4633f",
-                  borderTopWidth: 24,
-                  height: 0,
-                  marginTop: -2,
-                  width: 0,
+                  height: 310,
+                  resizeMode: "contain",
+                  width: 244,
                 }}
               />
-              <View style={{ backgroundColor: "rgba(255,255,255,0.74)", height: 72, marginTop: -2, width: 2 }} />
             </Animated.View>
           </View>
         </Pressable>
@@ -334,11 +305,6 @@ function BalloonScreen({ onEvening }: { onEvening: () => void }) {
           </Button>
         </View>
       </LinearGradient>
-
-      <Card tone="well" style={{ gap: spacing.sm }}>
-        <AppText variant="bodyStrong">Use it anytime.</AppText>
-        <AppText color={colors.inkSoft}>A balloon is simple on purpose. It gives your body one clear job: make the exhale slow and gentle.</AppText>
-      </Card>
     </>
   );
 }

@@ -5,3 +5,4 @@ dist/
 build/
 .env
 .env.*
+assets/images/*-chroma.png
