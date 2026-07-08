@@ -2,7 +2,7 @@
 
 Planning, design system, and MVP app materials for a parent emotion regulation app currently using the working title **Steady**.
 
-The project explores a mobile app that helps parents regulate themselves during hard toddler moments, repair after conflict, and build a daily ritual of becoming 1% steadier.
+The project explores a mobile app that helps parents build a daily ritual of becoming 1% steadier: one positive morning question, one evening small-win reflection, and a candle-breathing moment for regulation.
 
 ## Current Artifacts
 
@@ -11,7 +11,7 @@ The project explores a mobile app that helps parents regulate themselves during 
 - `ONBOARDING_REDESIGN_PLAN.html` - HTML version of the onboarding plan
 - `PROJECT_REVIEW.html` - synthesized project review for strategy discussion
 - `Design System/` - early design system tokens, components, guidelines, and UI kit assets
-- `app/` and `src/` - Expo MVP of the Steady mobile experience
+- `app/` and `src/` - Expo MVP of the Steady daily ritual experience
 - `.codex/environments/environment.toml` - Codex Run button configuration
 
 ## Run the MVP
@@ -35,4 +35,4 @@ From the Codex app, use the `Run` action to start Expo or `Run Web` for the brow
 
 ## Status
 
-Concept and pre-validation with a clickable Expo MVP. The app is not production-ready: it has no backend, auth, analytics, subscriptions, lock-screen widget, clinical review, or live validation data yet.
+Concept and pre-validation with a clickable Expo MVP. The app is not production-ready: it has no backend, auth, analytics, subscriptions, clinical review, or live validation data yet.

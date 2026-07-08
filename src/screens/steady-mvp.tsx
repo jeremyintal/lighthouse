@@ -1,439 +1,336 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, TextInput, View } from "react-native";
-import {
-  AppText,
-  BreatherOrb,
-  Button,
-  Card,
-  Chip,
-  ProgressDots,
-  SOSButton,
-} from "@/components/steady-primitives";
-import { dailyAffirmation, progressDays, repairScript, scripts, type Script } from "@/lib/steady-content";
+import { useEffect, useMemo, useState } from "react";
+import { Animated, Pressable, ScrollView, TextInput, View } from "react-native";
+import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
 
-type Screen = "home" | "breather" | "script" | "checkin" | "progress" | "settings";
-type Feeling = "steadier" | "same" | "rough";
+type Screen = "morning" | "candle" | "evening";
+
+const morningQuestion = "What is one small win you want to notice today?";
+const eveningQuestion = "What small win happened today, even if the day was hard?";
 
 export function SteadyMvp() {
-  const [screen, setScreen] = useState<Screen>("home");
-  const [selectedScript, setSelectedScript] = useState<Script>(scripts[0]);
-  const [feeling, setFeeling] = useState<Feeling>("steadier");
-  const [ritualNote, setRitualNote] = useState("");
-  const [momentsHandled, setMomentsHandled] = useState(9);
-  const [bedtimeTheme, setBedtimeTheme] = useState(false);
-  const [anonymous, setAnonymous] = useState(true);
+  const [screen, setScreen] = useState<Screen>("morning");
+  const [morningReflection, setMorningReflection] = useState("");
+  const [eveningReflection, setEveningReflection] = useState("");
 
-  const activeTitle = useMemo(() => {
-    if (screen === "breather") return "Breather";
-    if (screen === "script") return "Right now";
-    if (screen === "checkin") return "Check-in";
-    if (screen === "progress") return "This month";
-    if (screen === "settings") return "Settings";
-    return "Steady";
+  const title = useMemo(() => {
+    if (screen === "candle") return "Breathe";
+    if (screen === "evening") return "Evening";
+    return "Morning";
   }, [screen]);
 
-  const background = bedtimeTheme ? "#211f1b" : colors.paper;
-
-  const startScript = (script: Script) => {
-    setSelectedScript(script);
-    setScreen("script");
-  };
-
-  const completeCheckIn = () => {
-    setMomentsHandled((current) => current + 1);
-    setScreen("progress");
-  };
-
   return (
-    <View style={{ flex: 1, backgroundColor: background }}>
-      {screen === "breather" ? (
-        <BreatherScreen onSkip={() => setScreen("script")} onDone={() => setScreen("script")} />
-      ) : (
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={{
-            gap: spacing.xl,
-            paddingBottom: 110,
-            paddingHorizontal: spacing.xl,
-            paddingTop: 62,
-          }}
-        >
-          <Header title={activeTitle} bedtimeTheme={bedtimeTheme} />
-          {screen === "home" && (
-            <HomeScreen
-              ritualNote={ritualNote}
-              onChangeRitualNote={setRitualNote}
-              onSos={() => setScreen("breather")}
-              onScript={startScript}
-              momentsHandled={momentsHandled}
-              onProgress={() => setScreen("progress")}
-            />
-          )}
-          {screen === "script" && (
-            <ScriptScreen
-              selectedScript={selectedScript}
-              onSelect={setSelectedScript}
-              onHelped={() => setScreen("checkin")}
-              onRepair={() => {
-                setSelectedScript({ key: "tantrum", label: "Repair", ...repairScript });
-                setScreen("script");
-              }}
-            />
-          )}
-          {screen === "checkin" && (
-            <CheckInScreen feeling={feeling} onFeeling={setFeeling} onDone={completeCheckIn} />
-          )}
-          {screen === "progress" && <ProgressScreen momentsHandled={momentsHandled} onSos={() => setScreen("breather")} />}
-          {screen === "settings" && (
-            <SettingsScreen
-              bedtimeTheme={bedtimeTheme}
-              onBedtimeTheme={setBedtimeTheme}
-              anonymous={anonymous}
-              onAnonymous={setAnonymous}
-            />
-          )}
-        </ScrollView>
-      )}
-      {screen !== "breather" && <TabBar screen={screen} onChange={setScreen} />}
+    <View style={{ flex: 1, backgroundColor: colors.paper }}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{
+          gap: spacing.xl,
+          minHeight: "100%",
+          paddingBottom: 112,
+          paddingHorizontal: spacing.xl,
+          paddingTop: 62,
+        }}
+      >
+        <Header title={title} />
+        {screen === "morning" && (
+          <MorningScreen value={morningReflection} onChange={setMorningReflection} onBreathe={() => setScreen("candle")} />
+        )}
+        {screen === "candle" && <CandleScreen onEvening={() => setScreen("evening")} />}
+        {screen === "evening" && (
+          <EveningScreen
+            morningReflection={morningReflection}
+            value={eveningReflection}
+            onChange={setEveningReflection}
+            onBreathe={() => setScreen("candle")}
+          />
+        )}
+      </ScrollView>
+      <TabBar screen={screen} onChange={setScreen} />
     </View>
   );
 }
 
-function Header({ title, bedtimeTheme }: { title: string; bedtimeTheme: boolean }) {
+function Header({ title }: { title: string }) {
   return (
     <View style={{ gap: spacing.sm }}>
-      <AppText variant="overline" color={bedtimeTheme ? "#b9cbc5" : colors.accentStrong}>
-        Tuesday morning
+      <AppText variant="overline" color={colors.accentStrong}>
+        Lighthouse
       </AppText>
-      <AppText variant="display" color={bedtimeTheme ? "#f6f2ea" : colors.ink}>
-        {title}
-      </AppText>
+      <AppText variant="display">{title}</AppText>
     </View>
   );
 }
 
-function HomeScreen({
-  ritualNote,
-  onChangeRitualNote,
-  onSos,
-  onScript,
-  momentsHandled,
-  onProgress,
+function MorningScreen({
+  value,
+  onChange,
+  onBreathe,
 }: {
-  ritualNote: string;
-  onChangeRitualNote: (value: string) => void;
-  onSos: () => void;
-  onScript: (script: Script) => void;
-  momentsHandled: number;
-  onProgress: () => void;
+  value: string;
+  onChange: (value: string) => void;
+  onBreathe: () => void;
 }) {
   return (
     <>
       <Card tone="accent" style={{ gap: spacing.lg }}>
         <View style={{ gap: spacing.sm }}>
           <AppText variant="overline" color={colors.accentStrong}>
-            {dailyAffirmation.overline}
+            Begin softly
           </AppText>
-          <AppText variant="headline">{dailyAffirmation.title}</AppText>
-          <AppText color={colors.inkSoft}>{dailyAffirmation.body}</AppText>
+          <AppText variant="headline">One small win is enough.</AppText>
+          <AppText color={colors.inkSoft}>
+            Before the day asks anything from you, choose one positive thing to notice. Not a goal to perform. Just a place to aim your attention.
+          </AppText>
         </View>
-        <View style={{ gap: spacing.sm }}>
-          <AppText variant="bodyStrong">{dailyAffirmation.prompt}</AppText>
-          <TextInput
-            accessibilityLabel="Daily reflection"
-            multiline
-            onChangeText={onChangeRitualNote}
-            placeholder="A tiny thing is enough."
-            placeholderTextColor={colors.inkFaint}
-            style={{
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-              borderCurve: "continuous",
-              borderRadius: radii.md,
-              borderWidth: 1,
-              color: colors.ink,
-              fontSize: 17,
-              lineHeight: 24,
-              minHeight: 92,
-              padding: spacing.lg,
-              textAlignVertical: "top",
-            }}
-            value={ritualNote}
-          />
-        </View>
+        <ReflectionInput
+          accessibilityLabel="Morning reflection"
+          placeholder="Maybe: one calm goodbye, one patient pause, one laugh."
+          question={morningQuestion}
+          value={value}
+          onChange={onChange}
+        />
       </Card>
-
-      <View style={{ alignItems: "center", paddingVertical: spacing.lg }}>
-        <SOSButton onPress={onSos} />
-      </View>
 
       <Card tone="surface" style={{ gap: spacing.md }}>
-        <AppText variant="bodyStrong">Start with a common moment</AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-          {scripts.map((script) => (
-            <Chip key={script.key} label={script.label} onPress={() => onScript(script)} />
-          ))}
-        </View>
+        <AppText variant="bodyStrong">When the day starts loud</AppText>
+        <AppText color={colors.inkSoft}>
+          Use the candle for one breath. Inhale while it glows. Exhale and blow it out.
+        </AppText>
+        <Button onPress={onBreathe}>Open the candle</Button>
       </Card>
-
-      <Pressable accessibilityRole="button" onPress={onProgress}>
-        <Card tone="well" style={{ gap: spacing.sm }}>
-          <AppText variant="bodyStrong">This month</AppText>
-          <AppText color={colors.inkSoft}>
-            {momentsHandled} hard moments handled with a breather. No streaks. Just evidence that you keep coming back.
-          </AppText>
-        </Card>
-      </Pressable>
     </>
   );
 }
 
-function BreatherScreen({ onSkip, onDone }: { onSkip: () => void; onDone: () => void }) {
+function EveningScreen({
+  morningReflection,
+  value,
+  onChange,
+  onBreathe,
+}: {
+  morningReflection: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBreathe: () => void;
+}) {
   return (
-    <LinearGradient colors={["#274d42", "#2f6f5e", "#3d8571"]} style={{ flex: 1 }}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{
+    <>
+      <Card tone="repair" style={{ gap: spacing.lg }}>
+        <View style={{ gap: spacing.sm }}>
+          <AppText variant="overline" color={colors.repair}>
+            Close the loop
+          </AppText>
+          <AppText variant="headline">Log the small win.</AppText>
+          <AppText color={colors.inkSoft}>
+            The day did not have to be easy to contain something worth keeping. Write one thing that counts.
+          </AppText>
+        </View>
+        {morningReflection.trim().length > 0 && (
+          <Card tone="well" style={{ gap: spacing.xs, padding: spacing.lg }}>
+            <AppText variant="overline" color={colors.inkSoft}>
+              This morning
+            </AppText>
+            <AppText color={colors.inkSoft}>{morningReflection}</AppText>
+          </Card>
+        )}
+        <ReflectionInput
+          accessibilityLabel="Evening reflection"
+          placeholder="Maybe: I apologized. I noticed the giggle. I got through bedtime."
+          question={eveningQuestion}
+          value={value}
+          onChange={onChange}
+        />
+      </Card>
+
+      <Card tone="surface" style={{ gap: spacing.md }}>
+        <AppText variant="bodyStrong">Let the day end</AppText>
+        <AppText color={colors.inkSoft}>One breath can mark the boundary between what happened and what you carry.</AppText>
+        <Button variant="repair" onPress={onBreathe}>
+          Blow out the candle
+        </Button>
+      </Card>
+    </>
+  );
+}
+
+function ReflectionInput({
+  accessibilityLabel,
+  placeholder,
+  question,
+  value,
+  onChange,
+}: {
+  accessibilityLabel: string;
+  placeholder: string;
+  question: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <View style={{ gap: spacing.sm }}>
+      <AppText variant="bodyStrong">{question}</AppText>
+      <TextInput
+        accessibilityLabel={accessibilityLabel}
+        multiline
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={colors.inkFaint}
+        style={{
+          backgroundColor: "#fffdf8",
+          borderColor: colors.line,
+          borderCurve: "continuous",
+          borderRadius: radii.md,
+          borderWidth: 1,
+          color: colors.ink,
+          fontSize: 17,
+          lineHeight: 24,
+          minHeight: 116,
+          padding: spacing.lg,
+          textAlignVertical: "top",
+        }}
+        value={value}
+      />
+    </View>
+  );
+}
+
+function CandleScreen({ onEvening }: { onEvening: () => void }) {
+  const [flame] = useState(() => new Animated.Value(1));
+  const [blownOut, setBlownOut] = useState(false);
+
+  useEffect(() => {
+    if (blownOut) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flame, {
+          toValue: 1.12,
+          duration: 2200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame, {
+          toValue: 0.92,
+          duration: 2200,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [blownOut, flame]);
+
+  const blowOut = () => {
+    setBlownOut(true);
+    Animated.timing(flame, {
+      toValue: 0,
+      duration: 700,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const relight = () => {
+    setBlownOut(false);
+    flame.setValue(1);
+  };
+
+  return (
+    <>
+      <LinearGradient
+        colors={["#274d42", "#2f6f5e", "#3d8571"]}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+        style={{
           alignItems: "center",
-          flexGrow: 1,
+          borderCurve: "continuous",
+          borderRadius: radii.xl,
+          boxShadow: shadows.raised,
+          gap: spacing.xxl,
+          minHeight: 520,
           justifyContent: "space-between",
-          paddingBottom: 42,
-          paddingHorizontal: spacing.xl,
-          paddingTop: 82,
+          padding: spacing.xxl,
         }}
       >
         <View style={{ alignItems: "center", gap: spacing.sm }}>
-          <AppText variant="overline" color="rgba(255,255,255,0.74)">
-            60 seconds
+          <AppText variant="overline" color="rgba(255,255,255,0.72)">
+            One candle breath
           </AppText>
           <AppText variant="headline" color="#ffffff" style={{ textAlign: "center" }}>
-            {"Let's slow it down together."}
+            Inhale. Then let it go.
           </AppText>
-          <AppText color="rgba(255,255,255,0.8)" style={{ textAlign: "center" }}>
-            Inhale while it grows. Exhale while it settles.
+          <AppText color="rgba(255,255,255,0.78)" style={{ textAlign: "center" }}>
+            Breathe in while the flame moves. Exhale slowly and tap the flame to blow it out.
           </AppText>
         </View>
 
-        <BreatherOrb />
+        <Pressable accessibilityRole="button" accessibilityLabel="Blow out candle" onPress={blowOut} style={{ alignItems: "center" }}>
+          <View style={{ alignItems: "center", height: 260, justifyContent: "flex-end", width: 190 }}>
+            <Animated.View
+              style={{
+                opacity: flame,
+                transform: [{ scale: flame }],
+              }}
+            >
+              <LinearGradient
+                colors={["#fff7bd", "#f3b562", "#c96b3f"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={{
+                  borderBottomLeftRadius: 34,
+                  borderBottomRightRadius: 34,
+                  borderTopLeftRadius: 42,
+                  borderTopRightRadius: 42,
+                  height: 102,
+                  marginBottom: -8,
+                  transform: [{ rotate: "-7deg" }],
+                  width: 62,
+                }}
+              />
+            </Animated.View>
+            <View
+              style={{
+                backgroundColor: "#fffdf8",
+                borderColor: "rgba(255,255,255,0.5)",
+                borderRadius: 22,
+                borderWidth: 1,
+                height: 154,
+                width: 92,
+              }}
+            />
+            <View
+              style={{
+                backgroundColor: "rgba(20, 35, 31, 0.22)",
+                borderRadius: radii.pill,
+                height: 18,
+                marginTop: -8,
+                width: 124,
+              }}
+            />
+          </View>
+        </Pressable>
 
         <View style={{ alignSelf: "stretch", gap: spacing.md }}>
-          <Button variant="secondary" onPress={onDone} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
-            {"I'm ready for a script"}
+          <Button variant="secondary" onPress={blownOut ? relight : blowOut} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
+            {blownOut ? "Light it again" : "Blow it out"}
           </Button>
-          <Button variant="ghost" onPress={onSkip} textStyle={{ color: "rgba(255,255,255,0.86)" }}>
-            Skip to the script
+          <Button variant="ghost" onPress={onEvening} textStyle={{ color: "rgba(255,255,255,0.86)" }}>
+            Go to evening reflection
           </Button>
         </View>
-      </ScrollView>
-    </LinearGradient>
-  );
-}
+      </LinearGradient>
 
-function ScriptScreen({
-  selectedScript,
-  onSelect,
-  onHelped,
-  onRepair,
-}: {
-  selectedScript: Script;
-  onSelect: (script: Script) => void;
-  onHelped: () => void;
-  onRepair: () => void;
-}) {
-  return (
-    <>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-        {scripts.map((script) => (
-          <Chip
-            key={script.key}
-            label={script.label}
-            selected={script.key === selectedScript.key}
-            onPress={() => onSelect(script)}
-          />
-        ))}
-      </View>
-
-      <Card tone="surface" style={{ gap: spacing.xl }}>
-        <View style={{ gap: spacing.sm }}>
-          <AppText variant="overline" color={colors.accentStrong}>
-            {selectedScript.situation}
-          </AppText>
-          {selectedScript.say.map((line) => (
-            <AppText key={line} variant="title">
-              {line}
-            </AppText>
-          ))}
-        </View>
-
-        <View style={{ gap: spacing.md }}>
-          <Card tone="accent" style={{ gap: spacing.xs, padding: spacing.lg }}>
-            <AppText variant="overline" color={colors.accentStrong}>
-              Do
-            </AppText>
-            <AppText>{selectedScript.doLine}</AppText>
-          </Card>
-          <Card tone="well" style={{ gap: spacing.xs, padding: spacing.lg }}>
-            <AppText variant="overline" color={colors.inkSoft}>
-              {"Don't"}
-            </AppText>
-            <AppText color={colors.inkSoft}>{selectedScript.dontLine}</AppText>
-          </Card>
-        </View>
-      </Card>
-
-      <View style={{ gap: spacing.md }}>
-        <Button onPress={onHelped}>That helped</Button>
-        <Button variant="repair" onPress={onRepair}>
-          I need a repair script
-        </Button>
-      </View>
-    </>
-  );
-}
-
-function CheckInScreen({
-  feeling,
-  onFeeling,
-  onDone,
-}: {
-  feeling: Feeling;
-  onFeeling: (feeling: Feeling) => void;
-  onDone: () => void;
-}) {
-  return (
-    <>
-      <Card tone="surface" style={{ gap: spacing.lg }}>
-        <AppText variant="headline">That counts.</AppText>
-        <AppText color={colors.inkSoft}>
-          You showed up for the hard 90 seconds. That is the whole thing.
-        </AppText>
-        <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          <Chip label="Steadier" selected={feeling === "steadier"} onPress={() => onFeeling("steadier")} />
-          <Chip label="Same" selected={feeling === "same"} onPress={() => onFeeling("same")} />
-          <Chip label="Rough" selected={feeling === "rough"} onPress={() => onFeeling("rough")} />
-        </View>
-      </Card>
-      <Card tone="repair" style={{ gap: spacing.sm }}>
-        <AppText variant="bodyStrong">Repair stays free.</AppText>
-        <AppText color={colors.inkSoft}>If you yelled, snapped, or got louder than you wanted, there is still a next right move.</AppText>
-      </Card>
-      <Button onPress={onDone}>Save this moment</Button>
-    </>
-  );
-}
-
-function ProgressScreen({ momentsHandled, onSos }: { momentsHandled: number; onSos: () => void }) {
-  return (
-    <>
-      <Card tone="surface" style={{ gap: spacing.lg }}>
-        <AppText variant="headline">{"You've been steadier than it feels."}</AppText>
-        <ProgressDots days={progressDays} />
-        <AppText color={colors.inkSoft}>
-          14 hard moments this month; you used a breather in {momentsHandled}. That counts.
-        </AppText>
-      </Card>
-      <Card tone="accent" style={{ gap: spacing.sm }}>
-        <AppText variant="bodyStrong">Your breather is working.</AppText>
-        <AppText color={colors.inkSoft}>On breather days, you logged fewer rough ones. No pressure. Just here when you need it.</AppText>
-      </Card>
-      <Button onPress={onSos}>Use the SOS button</Button>
-    </>
-  );
-}
-
-function SettingsScreen({
-  bedtimeTheme,
-  onBedtimeTheme,
-  anonymous,
-  onAnonymous,
-}: {
-  bedtimeTheme: boolean;
-  onBedtimeTheme: (value: boolean) => void;
-  anonymous: boolean;
-  onAnonymous: (value: boolean) => void;
-}) {
-  return (
-    <>
-      <Card tone="surface" style={{ gap: spacing.lg }}>
-        <SettingsRow
-          title="Bedtime theme"
-          body="Dim, warm colors for late-night moments."
-          active={bedtimeTheme}
-          onPress={() => onBedtimeTheme(!bedtimeTheme)}
-        />
-        <SettingsDivider />
-        <SettingsRow
-          title="Stay anonymous"
-          body="No account required for the MVP."
-          active={anonymous}
-          onPress={() => onAnonymous(!anonymous)}
-        />
-      </Card>
       <Card tone="well" style={{ gap: spacing.sm }}>
-        <AppText variant="bodyStrong">Privacy promise</AppText>
-        <AppText color={colors.inkSoft}>We never collect anything about your child. Your moments are yours.</AppText>
-      </Card>
-      <Card tone="danger" style={{ gap: spacing.sm }}>
-        <AppText variant="bodyStrong">In crisis?</AppText>
-        <AppText color={colors.inkSoft}>This app is not therapy. If someone may be hurt, reach a real person now.</AppText>
+        <AppText variant="bodyStrong">Use it anytime.</AppText>
+        <AppText color={colors.inkSoft}>A candle is simple on purpose. It gives your body one clear job: slow the exhale.</AppText>
       </Card>
     </>
   );
-}
-
-function SettingsRow({
-  title,
-  body,
-  active,
-  onPress,
-}: {
-  title: string;
-  body: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="switch"
-      accessibilityState={{ checked: active }}
-      onPress={onPress}
-      style={{ alignItems: "center", flexDirection: "row", gap: spacing.lg, minHeight: 56 }}
-    >
-      <View style={{ flex: 1, gap: spacing.xs }}>
-        <AppText variant="bodyStrong">{title}</AppText>
-        <AppText variant="small" color={colors.inkSoft}>
-          {body}
-        </AppText>
-      </View>
-      <View
-        style={{
-          alignItems: active ? "flex-end" : "flex-start",
-          backgroundColor: active ? colors.accent : colors.lineStrong,
-          borderRadius: radii.pill,
-          height: 32,
-          justifyContent: "center",
-          padding: 3,
-          width: 54,
-        }}
-      >
-        <View style={{ backgroundColor: "#ffffff", borderRadius: radii.pill, height: 26, width: 26 }} />
-      </View>
-    </Pressable>
-  );
-}
-
-function SettingsDivider() {
-  return <View style={{ backgroundColor: colors.line, height: 1 }} />;
 }
 
 function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Screen) => void }) {
   const tabs: { label: string; screen: Screen }[] = [
-    { label: "Home", screen: "home" },
-    { label: "SOS", screen: "breather" },
-    { label: "Progress", screen: "progress" },
-    { label: "Settings", screen: "settings" },
+    { label: "Morning", screen: "morning" },
+    { label: "Candle", screen: "candle" },
+    { label: "Evening", screen: "evening" },
   ];
 
   return (
@@ -455,7 +352,7 @@ function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Scree
       }}
     >
       {tabs.map((tab) => {
-        const active = tab.screen === screen || (tab.screen === "home" && screen === "script");
+        const active = tab.screen === screen;
         return (
           <Pressable
             accessibilityRole="button"
@@ -464,7 +361,7 @@ function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Scree
             onPress={() => onChange(tab.screen)}
             style={({ pressed }) => ({
               alignItems: "center",
-              backgroundColor: active ? colors.accent : colors.surface,
+              backgroundColor: active ? colors.accent : "#fffdf8",
               borderColor: active ? colors.accent : colors.line,
               borderRadius: radii.pill,
               borderWidth: 1,
