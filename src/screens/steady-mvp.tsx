@@ -17,6 +17,7 @@ export function SteadyMvp() {
   const [screen, setScreen] = useState<Screen>("morning");
   const [morningReflection, setMorningReflection] = useState("");
   const [eveningReflection, setEveningReflection] = useState("");
+  const [balloonCollectionCount, setBalloonCollectionCount] = useState(0);
 
   const title = useMemo(() => {
     if (screen === "balloon") return "Breathe";
@@ -40,7 +41,12 @@ export function SteadyMvp() {
         {screen === "morning" && (
           <MorningScreen value={morningReflection} onChange={setMorningReflection} onBreathe={() => setScreen("balloon")} />
         )}
-        {screen === "balloon" && <BalloonScreen />}
+        {screen === "balloon" && (
+          <BalloonScreen
+            collectionCount={balloonCollectionCount}
+            onCollectBalloon={() => setBalloonCollectionCount((count) => count + 1)}
+          />
+        )}
         {screen === "evening" && (
           <EveningScreen
             morningReflection={morningReflection}
@@ -199,13 +205,21 @@ function ReflectionInput({
   );
 }
 
-function BalloonScreen() {
-  const [balloonScale] = useState(() => new Animated.Value(0.88));
+function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount: number; onCollectBalloon: () => void }) {
+  const maxBreaths = 5;
+  const deflatedScale = 0.24;
+  const fullScale = 1;
+  const scaleForBreath = (count: number) => deflatedScale + (Math.min(count, maxBreaths) / maxBreaths) * (fullScale - deflatedScale);
+
+  const [balloonScale] = useState(() => new Animated.Value(deflatedScale));
   const [float] = useState(() => new Animated.Value(0));
   const [breaths, setBreaths] = useState(0);
+  const [collectedThisBalloon, setCollectedThisBalloon] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [micMessage, setMicMessage] = useState("Tap the button, or turn on the mic and blow gently.");
   const [blowLevel, setBlowLevel] = useState(0);
+  const breathsRef = useRef(0);
+  const collectedThisBalloonRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -233,17 +247,28 @@ function BalloonScreen() {
   }, [float]);
 
   const inflate = () => {
-    const nextBreaths = Math.min(breaths + 1, 4);
+    if (breathsRef.current >= maxBreaths) return;
+
+    const nextBreaths = Math.min(breathsRef.current + 1, maxBreaths);
+    breathsRef.current = nextBreaths;
     setBreaths(nextBreaths);
     Animated.spring(balloonScale, {
-      toValue: 0.88 + nextBreaths * 0.08,
+      toValue: scaleForBreath(nextBreaths),
       damping: 12,
       stiffness: 70,
       useNativeDriver: true,
     }).start();
+
+    if (nextBreaths >= maxBreaths && !collectedThisBalloonRef.current) {
+      collectedThisBalloonRef.current = true;
+      setCollectedThisBalloon(true);
+      onCollectBalloon();
+      setMicMessage("Fully inflated. Added to your account collection.");
+    }
   };
 
   const inflateFromBlow = () => {
+    if (breathsRef.current >= maxBreaths) return;
     const now = Date.now();
     if (now - lastInflatedAtRef.current < 1200) return;
     lastInflatedAtRef.current = now;
@@ -252,9 +277,12 @@ function BalloonScreen() {
   };
 
   const reset = () => {
+    breathsRef.current = 0;
+    collectedThisBalloonRef.current = false;
     setBreaths(0);
+    setCollectedThisBalloon(false);
     Animated.spring(balloonScale, {
-      toValue: 0.88,
+      toValue: deflatedScale,
       damping: 12,
       stiffness: 70,
       useNativeDriver: true,
@@ -354,6 +382,16 @@ function BalloonScreen() {
     inputRange: [0, 1],
     outputRange: [8, -8],
   });
+  const balloonScaleX = balloonScale.interpolate({
+    inputRange: [deflatedScale, fullScale],
+    outputRange: [0.7, 1],
+  });
+  const balloonScaleY = balloonScale.interpolate({
+    inputRange: [deflatedScale, fullScale],
+    outputRange: [0.16, 1],
+  });
+  const breathProgress = breaths / maxBreaths;
+  const collectionPreviewCount = Math.min(collectionCount, 9);
 
   return (
     <>
@@ -377,10 +415,10 @@ function BalloonScreen() {
             Balloon breath
           </AppText>
           <AppText variant="headline" color="#ffffff" style={{ textAlign: "center" }}>
-            Fill it slowly.
+            Start empty. Fill it slowly.
           </AppText>
           <AppText color="rgba(255,255,255,0.78)" style={{ textAlign: "center" }}>
-            Inhale through your nose. Exhale slowly toward the microphone to fill the balloon.
+            Five slow exhales inflate the balloon. When it is full, it joins your collection.
           </AppText>
         </View>
 
@@ -389,7 +427,7 @@ function BalloonScreen() {
             <Animated.View
               style={{
                 alignItems: "center",
-                transform: [{ translateY }, { scale: balloonScale }],
+                transform: [{ translateY }, { scaleX: balloonScaleX }, { scaleY: balloonScaleY }],
               }}
             >
               <Image
@@ -405,6 +443,31 @@ function BalloonScreen() {
         </Pressable>
 
         <View style={{ alignSelf: "stretch", gap: spacing.md }}>
+          <View style={{ gap: spacing.sm }}>
+            <View
+              accessibilityLabel={`Balloon inflation ${Math.round(breathProgress * 100)} percent`}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.18)",
+                borderColor: "rgba(255,255,255,0.34)",
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                height: 12,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "#f8d88f",
+                  borderRadius: radii.pill,
+                  height: "100%",
+                  width: `${Math.max(4, breathProgress * 100)}%`,
+                }}
+              />
+            </View>
+            <AppText variant="small" color="rgba(255,255,255,0.82)" style={{ textAlign: "center" }}>
+              {collectedThisBalloon ? "Saved. Start another whenever you need it." : `${breaths} of ${maxBreaths} slow breaths`}
+            </AppText>
+          </View>
           <View style={{ gap: spacing.sm }}>
             <View
               accessibilityLabel={`Blow level ${Math.round(blowLevel * 100)} percent`}
@@ -430,14 +493,82 @@ function BalloonScreen() {
               {micMessage}
             </AppText>
           </View>
+          <Button variant="secondary" onPress={breaths >= maxBreaths ? reset : inflate} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
+            {breaths >= maxBreaths ? "Start another balloon" : "Add one slow breath"}
+          </Button>
           <Button variant="secondary" onPress={micActive ? stopMic : startMic} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
             {micActive ? "Turn microphone off" : "Turn microphone on"}
           </Button>
-          <Button variant="secondary" onPress={breaths >= 4 ? reset : inflate} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
-            {breaths >= 4 ? "Start again" : "Add one slow breath"}
-          </Button>
         </View>
       </LinearGradient>
+
+      <Card tone="surface" style={{ gap: spacing.md }}>
+        <View style={{ flexDirection: "row", gap: spacing.md, justifyContent: "space-between" }}>
+          <View style={{ flex: 1, gap: spacing.xs }}>
+            <AppText variant="bodyStrong">Account collection</AppText>
+            <AppText color={colors.inkSoft}>
+              {collectionCount === 0
+                ? "No balloons saved yet. Fill one when you need a reset."
+                : `${collectionCount} ${collectionCount === 1 ? "balloon" : "balloons"} saved from slow breaths.`}
+            </AppText>
+          </View>
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: colors.accentFaint,
+              borderRadius: radii.lg,
+              justifyContent: "center",
+              minHeight: 56,
+              minWidth: 64,
+              paddingHorizontal: spacing.md,
+            }}
+          >
+            <AppText variant="title" color={colors.accentStrong}>
+              {collectionCount}
+            </AppText>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, minHeight: 42 }}>
+          {collectionCount === 0 ? (
+            <View
+              style={{
+                backgroundColor: colors.surfaceWell,
+                borderRadius: radii.pill,
+                height: 34,
+                width: 34,
+              }}
+            />
+          ) : (
+            Array.from({ length: collectionPreviewCount }).map((_, index) => (
+              <Image
+                key={index}
+                source={playfulBalloon}
+                style={{
+                  height: 40,
+                  resizeMode: "contain",
+                  width: 32,
+                }}
+              />
+            ))
+          )}
+          {collectionCount > collectionPreviewCount && (
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: colors.surfaceWell,
+                borderRadius: radii.pill,
+                height: 36,
+                justifyContent: "center",
+                paddingHorizontal: spacing.md,
+              }}
+            >
+              <AppText variant="small" color={colors.inkSoft}>
+                +{collectionCount - collectionPreviewCount}
+              </AppText>
+            </View>
+          )}
+        </View>
+      </Card>
     </>
   );
 }
