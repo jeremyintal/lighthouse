@@ -26,7 +26,13 @@
       "output": "single"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Lighthouse uses the microphone only to detect a gentle exhale for the balloon breathing exercise."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

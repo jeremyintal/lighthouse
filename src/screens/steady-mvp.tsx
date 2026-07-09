@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, Pressable, ScrollView, TextInput, View } from "react-native";
+import { requestRecordingPermissionsAsync, useAudioStream, type AudioStreamBuffer } from "expo-audio";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Image, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
 
@@ -12,6 +13,7 @@ type Screen = "home" | "journal" | "breather";
 const morningQuestion = "What small win will you notice today?";
 const eveningQuestion = "What small win happened today?";
 const blowThreshold = 0.085;
+const nativeBlowThreshold = 0.045;
 const blowHoldMs = 850;
 
 export function SteadyMvp() {
@@ -214,6 +216,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
   const frameRef = useRef<number | null>(null);
   const blowStartedAtRef = useRef<number | null>(null);
   const lastInflatedAtRef = useRef(0);
+  const smoothedBlowLevelRef = useRef(0);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -234,7 +237,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     return () => loop.stop();
   }, [float]);
 
-  const inflate = () => {
+  const inflate = useCallback(() => {
     if (breathsRef.current >= maxBreaths) return;
 
     const nextBreaths = Math.min(breathsRef.current + 1, maxBreaths);
@@ -253,16 +256,58 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       onCollectBalloon();
       setMicMessage("Saved to your collection.");
     }
-  };
+  }, [balloonProgress, onCollectBalloon]);
 
-  const inflateFromBlow = () => {
+  const inflateFromBlow = useCallback(() => {
     if (breathsRef.current >= maxBreaths) return;
     const now = Date.now();
     if (now - lastInflatedAtRef.current < 1200) return;
     lastInflatedAtRef.current = now;
     inflate();
     setMicMessage("Nice slow exhale.");
-  };
+  }, [inflate]);
+
+  const handleNativeAudioBuffer = useCallback(
+    (buffer: AudioStreamBuffer) => {
+      if (breathsRef.current >= maxBreaths) return;
+
+      const samples = new Float32Array(buffer.data);
+      if (samples.length === 0) return;
+
+      let sum = 0;
+      for (let index = 0; index < samples.length; index += 1) {
+        const sample = samples[index];
+        sum += sample * sample;
+      }
+
+      const rms = Math.sqrt(sum / samples.length);
+      const level = Math.min(1, rms / 0.18);
+      const smoothedLevel = smoothedBlowLevelRef.current * 0.72 + level * 0.28;
+      smoothedBlowLevelRef.current = smoothedLevel;
+      setBlowLevel(smoothedLevel);
+
+      const now = Date.now();
+      if (rms > nativeBlowThreshold) {
+        blowStartedAtRef.current ??= now;
+        setMicMessage("Keep going.");
+        if (now - blowStartedAtRef.current >= blowHoldMs) {
+          blowStartedAtRef.current = null;
+          inflateFromBlow();
+        }
+      } else {
+        blowStartedAtRef.current = null;
+        setMicMessage("Blow gently.");
+      }
+    },
+    [inflateFromBlow],
+  );
+
+  const { stream: nativeAudioStream } = useAudioStream({
+    sampleRate: 16000,
+    channels: 1,
+    encoding: "float32",
+    onBuffer: handleNativeAudioBuffer,
+  });
 
   const reset = () => {
     breathsRef.current = 0;
@@ -281,6 +326,16 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
   };
 
   const stopMic = () => {
+    if (Platform.OS !== "web") {
+      nativeAudioStream.stop();
+      blowStartedAtRef.current = null;
+      smoothedBlowLevelRef.current = 0;
+      setBlowLevel(0);
+      setMicActive(false);
+      setMicMessage("Mic off. Tap still works.");
+      return;
+    }
+
     if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
@@ -297,6 +352,27 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
   };
 
   const startMic = async () => {
+    if (Platform.OS !== "web") {
+      try {
+        const permission = await requestRecordingPermissionsAsync();
+        if (!permission.granted) {
+          setMicMessage("Mic permission needed. Tap still works.");
+          return;
+        }
+
+        blowStartedAtRef.current = null;
+        smoothedBlowLevelRef.current = 0;
+        setBlowLevel(0);
+        setMicMessage("Blow gently.");
+        await nativeAudioStream.start();
+        setMicActive(true);
+      } catch {
+        setMicActive(false);
+        setMicMessage("Mic unavailable. Tap still works.");
+      }
+      return;
+    }
+
     if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setMicMessage("Mic unavailable. Tap still works.");
       return;
@@ -364,7 +440,25 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     }
   };
 
-  useEffect(() => stopMic, []);
+  useEffect(
+    () => () => {
+      if (Platform.OS !== "web") {
+        nativeAudioStream.stop();
+        return;
+      }
+
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      audioContextRef.current?.close().catch(() => undefined);
+      audioContextRef.current = null;
+      analyserRef.current = null;
+    },
+    [nativeAudioStream],
+  );
 
   const translateY = float.interpolate({
     inputRange: [0, 1],
