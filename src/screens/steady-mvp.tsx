@@ -392,7 +392,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
   return (
     <>
       <LinearGradient
-        colors={["#274d42", "#2f6f5e", "#8ab9aa"]}
+        colors={["#dceee9", "#f4d0b7", "#8db6ad"]}
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.8, y: 1 }}
         style={{
@@ -407,7 +407,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
         }}
       >
         <View style={{ alignItems: "center", gap: spacing.sm }}>
-          <AppText variant="headline" color="#ffffff" style={{ textAlign: "center" }}>
+          <AppText variant="headline" color={colors.ink} style={{ textAlign: "center" }}>
             Fill the balloon.
           </AppText>
         </View>
@@ -456,8 +456,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             <View
               accessibilityLabel={`Balloon inflation ${Math.round(breathProgress * 100)} percent`}
               style={{
-                backgroundColor: "rgba(255,255,255,0.18)",
-                borderColor: "rgba(255,255,255,0.34)",
+                backgroundColor: "rgba(255,253,248,0.38)",
+                borderColor: "rgba(255,253,248,0.72)",
                 borderRadius: radii.pill,
                 borderWidth: 1,
                 height: 12,
@@ -466,14 +466,14 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             >
               <View
                 style={{
-                  backgroundColor: "#f8d88f",
+                  backgroundColor: "#c76d45",
                   borderRadius: radii.pill,
                   height: "100%",
                   width: `${Math.max(4, breathProgress * 100)}%`,
                 }}
               />
             </View>
-            <AppText variant="small" color="rgba(255,255,255,0.82)" style={{ textAlign: "center" }}>
+            <AppText variant="small" color={colors.ink} style={{ textAlign: "center" }}>
               {collectedThisBalloon ? "Saved. Start another whenever you need it." : `${breaths} of ${maxBreaths} slow breaths`}
             </AppText>
           </View>
@@ -482,8 +482,8 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             <View
               accessibilityLabel={`Blow level ${Math.round(blowLevel * 100)} percent`}
               style={{
-                backgroundColor: "rgba(255,255,255,0.18)",
-                borderColor: "rgba(255,255,255,0.34)",
+                backgroundColor: "rgba(255,253,248,0.38)",
+                borderColor: "rgba(255,253,248,0.72)",
                 borderRadius: radii.pill,
                 borderWidth: 1,
                 height: 12,
@@ -492,22 +492,22 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
             >
               <View
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.82)",
+                  backgroundColor: colors.surface,
                   borderRadius: radii.pill,
                   height: "100%",
                   width: `${Math.max(8, blowLevel * 100)}%`,
                 }}
               />
             </View>
-            <AppText variant="small" color="rgba(255,255,255,0.82)" style={{ textAlign: "center" }}>
+            <AppText variant="small" color={colors.ink} style={{ textAlign: "center" }}>
               {micMessage}
             </AppText>
             </View>
           )}
-          <Button variant="secondary" onPress={breaths >= maxBreaths ? reset : inflate} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
+          <Button variant="secondary" onPress={breaths >= maxBreaths ? reset : inflate} style={{ backgroundColor: "rgba(255,253,248,0.48)", borderColor: "rgba(255,253,248,0.8)" }} textStyle={{ color: colors.ink }}>
             {breaths >= maxBreaths ? "Start another balloon" : "Add one slow breath"}
           </Button>
-          <Button variant="secondary" onPress={micActive ? stopMic : startMic} style={{ backgroundColor: "rgba(255,255,255,0.18)" }} textStyle={{ color: "#ffffff" }}>
+          <Button variant="secondary" onPress={micActive ? stopMic : startMic} style={{ backgroundColor: "rgba(255,253,248,0.34)", borderColor: "rgba(255,253,248,0.68)" }} textStyle={{ color: colors.ink }}>
             {micActive ? "Turn microphone off" : "Turn microphone on"}
           </Button>
         </View>
@@ -592,7 +592,7 @@ function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Scree
   return (
     <View
       style={{
-        backgroundColor: "rgba(250,249,245,0.96)",
+        backgroundColor: "rgba(247,251,247,0.96)",
         borderColor: colors.line,
         borderTopWidth: 1,
         bottom: 0,
@@ -617,7 +617,7 @@ function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Scree
             onPress={() => onChange(tab.screen)}
             style={({ pressed }) => ({
               alignItems: "center",
-              backgroundColor: active ? colors.accent : "#fffdf8",
+              backgroundColor: active ? colors.accent : colors.surface,
               borderColor: active ? colors.accent : colors.line,
               borderRadius: radii.pill,
               borderWidth: 1,
