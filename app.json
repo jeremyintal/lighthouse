@@ -5,6 +5,7 @@
     "scheme": "lighthouse",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/images/aisles-of-man-app-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

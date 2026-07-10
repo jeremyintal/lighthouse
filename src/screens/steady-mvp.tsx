@@ -1,212 +1,185 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { requestRecordingPermissionsAsync, useAudioStream, type AudioStreamBuffer } from "expo-audio";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
+import { Animated, Image, Platform, Pressable, ScrollView, TextInput, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText, Button, Card } from "@/components/steady-primitives";
 import { colors, radii, shadows, spacing } from "@/lib/steady-tokens";
 
 const realisticBalloon = require("../../assets/images/realistic-balloon.png");
-const deflatedBalloon = require("../../assets/images/deflated-balloon.png");
+const balloonFrames = [
+  require("../../assets/images/balloon-stage-1.png"),
+  require("../../assets/images/balloon-stage-2.png"),
+  require("../../assets/images/balloon-stage-3.png"),
+  require("../../assets/images/balloon-stage-4.png"),
+  require("../../assets/images/balloon-stage-5.png"),
+  require("../../assets/images/balloon-stage-6.png"),
+  require("../../assets/images/balloon-stage-7.png"),
+  require("../../assets/images/balloon-stage-8.png"),
+  require("../../assets/images/balloon-stage-9.png"),
+] as const;
 
-type Screen = "home" | "journal" | "breather";
+type Screen = "breathe" | "morning";
 
-const morningQuestion = "What small win will you notice today?";
-const eveningQuestion = "What small win happened today?";
+const morningQuestion = "What would make today feel a little lighter?";
+const maxBreaths = 8;
 const blowThreshold = 0.085;
 const nativeBlowThreshold = 0.045;
 const blowHoldMs = 850;
+const useNativeAnimations = Platform.OS !== "web";
+
+function savedBalloonLabel(count: number) {
+  return `${count} ${count === 1 ? "balloon" : "balloons"} saved`;
+}
 
 export function SteadyMvp() {
-  const [screen, setScreen] = useState<Screen>("home");
+  const insets = useSafeAreaInsets();
+  const [screen, setScreen] = useState<Screen>("breathe");
   const [morningReflection, setMorningReflection] = useState("");
-  const [eveningReflection, setEveningReflection] = useState("");
   const [balloonCollectionCount, setBalloonCollectionCount] = useState(0);
 
-  const title = useMemo(() => {
-    if (screen === "journal") return "Journal";
-    if (screen === "breather") return "Breather";
-    return "Home";
-  }, [screen]);
+  const today = useMemo(
+    () => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(new Date()),
+    [],
+  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper }}>
+    <LinearGradient colors={["#f7fbf7", "#fff8f0", "#edf5f0"]} locations={[0, 0.58, 1]} style={{ flex: 1 }}>
       <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        style={{ alignSelf: "center", maxWidth: 430, width: "100%" }}
         contentContainerStyle={{
-          gap: spacing.xl,
-          minHeight: "100%",
-          paddingBottom: 112,
+          flexGrow: 1,
+          paddingBottom: 112 + insets.bottom,
           paddingHorizontal: spacing.xl,
-          paddingTop: 62,
+          paddingTop: insets.top + spacing.lg,
         }}
       >
-        <Header title={title} />
-        {screen === "home" && (
-          <HomeScreen
-            morningReflection={morningReflection}
-            onBreathe={() => setScreen("breather")}
-            onJournal={() => setScreen("journal")}
-          />
-        )}
-        {screen === "journal" && (
-          <JournalScreen
-            eveningReflection={eveningReflection}
-            morningReflection={morningReflection}
-            onBreathe={() => setScreen("breather")}
-            onEveningChange={setEveningReflection}
-            onMorningChange={setMorningReflection}
-          />
-        )}
-        {screen === "breather" && (
-          <BalloonScreen
+        <TopBar collectionCount={balloonCollectionCount} date={today} />
+
+        {screen === "breathe" ? (
+          <BalloonBreather
             collectionCount={balloonCollectionCount}
             onCollectBalloon={() => setBalloonCollectionCount((count) => count + 1)}
           />
+        ) : (
+          <MorningScreen
+            value={morningReflection}
+            onChange={setMorningReflection}
+            onFinish={() => setScreen("breathe")}
+          />
         )}
       </ScrollView>
-      <TabBar screen={screen} onChange={setScreen} />
-    </View>
+
+      <TabBar bottomInset={insets.bottom} screen={screen} onChange={setScreen} />
+    </LinearGradient>
   );
 }
 
-function Header({ title }: { title: string }) {
+function TopBar({ collectionCount, date }: { collectionCount: number; date: string }) {
   return (
-    <View style={{ gap: spacing.sm }}>
-      <AppText variant="overline" color={colors.accentStrong}>
-        Lighthouse
-      </AppText>
-      <AppText variant="display">{title}</AppText>
-    </View>
-  );
-}
+    <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 44 }}>
+      <View style={{ gap: 2 }}>
+        <AppText variant="overline" color={colors.accentStrong}>
+          Lighthouse
+        </AppText>
+        <AppText variant="small" color={colors.inkSoft}>
+          {date}
+        </AppText>
+      </View>
 
-function HomeScreen({
-  morningReflection,
-  onBreathe,
-  onJournal,
-}: {
-  morningReflection: string;
-  onBreathe: () => void;
-  onJournal: () => void;
-}) {
-  const hasMorningReflection = morningReflection.trim().length > 0;
-
-  return (
-    <>
-      <Card tone="accent" style={{ gap: spacing.lg }}>
-        <View style={{ gap: spacing.sm }}>
-          <AppText variant="bodyStrong">{morningQuestion}</AppText>
-          <AppText color={colors.inkSoft}>
-            {hasMorningReflection ? morningReflection : "Start with one small thing worth noticing."}
-          </AppText>
-        </View>
-        <Button onPress={onJournal}>{hasMorningReflection ? "Edit journal" : "Open journal"}</Button>
-      </Card>
-
-      <Card tone="surface" style={{ gap: spacing.md }}>
-        <AppText variant="bodyStrong">Need a breath?</AppText>
-        <Button onPress={onBreathe}>Open breather</Button>
-      </Card>
-    </>
-  );
-}
-
-function JournalScreen({
-  eveningReflection,
-  morningReflection,
-  onBreathe,
-  onEveningChange,
-  onMorningChange,
-}: {
-  eveningReflection: string;
-  morningReflection: string;
-  onBreathe: () => void;
-  onEveningChange: (value: string) => void;
-  onMorningChange: (value: string) => void;
-}) {
-  return (
-    <>
-      <Card tone="accent" style={{ gap: spacing.lg }}>
-        <ReflectionInput
-          accessibilityLabel="Morning reflection"
-          placeholder="One calm goodbye. One patient pause. One laugh."
-          question={morningQuestion}
-          value={morningReflection}
-          onChange={onMorningChange}
-        />
-      </Card>
-
-      <Card tone="repair" style={{ gap: spacing.lg }}>
-        <ReflectionInput
-          accessibilityLabel="Evening reflection"
-          placeholder="I apologized. I noticed the giggle. I got through bedtime."
-          question={eveningQuestion}
-          value={eveningReflection}
-          onChange={onEveningChange}
-        />
-      </Card>
-
-      <Card tone="surface" style={{ gap: spacing.md }}>
-        <AppText variant="bodyStrong">Need a reset?</AppText>
-        <Button variant="repair" onPress={onBreathe}>
-          Open breather
-        </Button>
-      </Card>
-    </>
-  );
-}
-
-function ReflectionInput({
-  accessibilityLabel,
-  placeholder,
-  question,
-  value,
-  onChange,
-}: {
-  accessibilityLabel: string;
-  placeholder: string;
-  question: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <View style={{ gap: spacing.sm }}>
-      <AppText variant="bodyStrong">{question}</AppText>
-      <TextInput
-        accessibilityLabel={accessibilityLabel}
-        multiline
-        onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor={colors.inkFaint}
+      <View
+        accessibilityLabel={savedBalloonLabel(collectionCount)}
         style={{
-          backgroundColor: "#fffdf8",
+          alignItems: "center",
+          backgroundColor: "rgba(255,253,248,0.82)",
           borderColor: colors.line,
           borderCurve: "continuous",
           borderRadius: radii.md,
           borderWidth: 1,
-          color: colors.ink,
-          fontSize: 17,
-          lineHeight: 24,
-          minHeight: 116,
-          padding: spacing.lg,
-          textAlignVertical: "top",
+          flexDirection: "row",
+          gap: spacing.xs,
+          minHeight: 44,
+          paddingHorizontal: spacing.md,
         }}
-        value={value}
-      />
+      >
+        <Image source={realisticBalloon} style={{ height: 30, resizeMode: "contain", width: 20 }} />
+        <AppText variant="bodyStrong" color={colors.accentStrong}>
+          {collectionCount}
+        </AppText>
+      </View>
     </View>
   );
 }
 
-function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount: number; onCollectBalloon: () => void }) {
-  const maxBreaths = 5;
-  const progressForBreath = (count: number) => Math.min(count, maxBreaths) / maxBreaths;
+function MorningScreen({
+  value,
+  onChange,
+  onFinish,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onFinish: () => void;
+}) {
+  return (
+    <View style={{ flex: 1, gap: spacing.xxl, paddingTop: spacing.xxxl }}>
+      <View style={{ gap: spacing.md }}>
+        <AppText variant="headline">Begin with one thing.</AppText>
+        <AppText color={colors.inkSoft}>No perfect plan. Just a gentle direction for today.</AppText>
+      </View>
 
-  const [balloonProgress] = useState(() => new Animated.Value(0));
+      <Card tone="surface" style={{ gap: spacing.lg }}>
+        <AppText variant="bodyStrong">{morningQuestion}</AppText>
+        <TextInput
+          accessibilityLabel="Morning intention"
+          multiline
+          onChangeText={onChange}
+          placeholder="A patient goodbye. A laugh before school."
+          placeholderTextColor={colors.inkFaint}
+          style={{
+            backgroundColor: colors.paper,
+            borderColor: colors.line,
+            borderCurve: "continuous",
+            borderRadius: radii.md,
+            borderWidth: 1,
+            color: colors.ink,
+            fontFamily: "Avenir Next",
+            fontSize: 17,
+            lineHeight: 25,
+            minHeight: 144,
+            padding: spacing.lg,
+            textAlignVertical: "top",
+          }}
+          value={value}
+        />
+        <Button onPress={onFinish}>{value.trim() ? "Save and breathe" : "Skip to breathing"}</Button>
+      </Card>
+
+      <View style={{ borderLeftColor: colors.repair, borderLeftWidth: 3, gap: spacing.sm, paddingLeft: spacing.lg }}>
+        <AppText variant="bodyStrong" color={colors.ink}>
+          You only need to meet this day one moment at a time.
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+function BalloonBreather({
+  collectionCount,
+  onCollectBalloon,
+}: {
+  collectionCount: number;
+  onCollectBalloon: () => void;
+}) {
+  const { height: viewportHeight } = useWindowDimensions();
+  const compactHeight = viewportHeight < 780;
   const [float] = useState(() => new Animated.Value(0));
   const [breaths, setBreaths] = useState(0);
   const [collectedThisBalloon, setCollectedThisBalloon] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [micMessage, setMicMessage] = useState("Tap or blow gently.");
+  const [micMessage, setMicMessage] = useState("Ready when you are.");
   const [blowLevel, setBlowLevel] = useState(0);
   const breathsRef = useRef(0);
   const collectedThisBalloonRef = useRef(false);
@@ -217,20 +190,14 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
   const blowStartedAtRef = useRef<number | null>(null);
   const lastInflatedAtRef = useRef(0);
   const smoothedBlowLevelRef = useRef(0);
+  const micActiveRef = useRef(false);
+  const stopMicRef = useRef<(preserveMessage?: boolean) => void>(() => undefined);
 
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(float, {
-          toValue: 1,
-          duration: 2600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(float, {
-          toValue: 0,
-          duration: 2600,
-          useNativeDriver: true,
-        }),
+        Animated.timing(float, { toValue: 1, duration: 2800, useNativeDriver: useNativeAnimations }),
+        Animated.timing(float, { toValue: 0, duration: 2800, useNativeDriver: useNativeAnimations }),
       ]),
     );
     loop.start();
@@ -243,20 +210,15 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     const nextBreaths = Math.min(breathsRef.current + 1, maxBreaths);
     breathsRef.current = nextBreaths;
     setBreaths(nextBreaths);
-    Animated.spring(balloonProgress, {
-      toValue: progressForBreath(nextBreaths),
-      damping: 12,
-      stiffness: 70,
-      useNativeDriver: true,
-    }).start();
 
-    if (nextBreaths >= maxBreaths && !collectedThisBalloonRef.current) {
+    if (nextBreaths === maxBreaths && !collectedThisBalloonRef.current) {
       collectedThisBalloonRef.current = true;
       setCollectedThisBalloon(true);
       onCollectBalloon();
-      setMicMessage("Saved to your collection.");
+      setMicMessage("You made a little space.");
+      if (micActiveRef.current) stopMicRef.current(true);
     }
-  }, [balloonProgress, onCollectBalloon]);
+  }, [onCollectBalloon]);
 
   const inflateFromBlow = useCallback(() => {
     if (breathsRef.current >= maxBreaths) return;
@@ -264,7 +226,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     if (now - lastInflatedAtRef.current < 1200) return;
     lastInflatedAtRef.current = now;
     inflate();
-    setMicMessage("Nice slow exhale.");
+    setMicMessage("That was enough.");
   }, [inflate]);
 
   const handleNativeAudioBuffer = useCallback(
@@ -289,14 +251,14 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       const now = Date.now();
       if (rms > nativeBlowThreshold) {
         blowStartedAtRef.current ??= now;
-        setMicMessage("Keep going.");
+        setMicMessage("Keep exhaling...");
         if (now - blowStartedAtRef.current >= blowHoldMs) {
           blowStartedAtRef.current = null;
           inflateFromBlow();
         }
       } else {
         blowStartedAtRef.current = null;
-        setMicMessage("Blow gently.");
+        setMicMessage("Blow gently toward the phone.");
       }
     },
     [inflateFromBlow],
@@ -314,25 +276,20 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     collectedThisBalloonRef.current = false;
     setBreaths(0);
     setCollectedThisBalloon(false);
-    Animated.spring(balloonProgress, {
-      toValue: 0,
-      damping: 12,
-      stiffness: 70,
-      useNativeDriver: true,
-    }).start();
     blowStartedAtRef.current = null;
     lastInflatedAtRef.current = 0;
-    setMicMessage(micActive ? "Blow gently." : "Tap or blow gently.");
+    setMicMessage(micActive ? "Blow gently toward the phone." : "Ready when you are.");
   };
 
-  const stopMic = () => {
+  const stopMic = useCallback((preserveMessage = false) => {
     if (Platform.OS !== "web") {
       nativeAudioStream.stop();
       blowStartedAtRef.current = null;
       smoothedBlowLevelRef.current = 0;
       setBlowLevel(0);
+      micActiveRef.current = false;
       setMicActive(false);
-      setMicMessage("Mic off. Tap still works.");
+      if (!preserveMessage) setMicMessage("Ready when you are.");
       return;
     }
 
@@ -347,49 +304,53 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
     analyserRef.current = null;
     blowStartedAtRef.current = null;
     setBlowLevel(0);
+    micActiveRef.current = false;
     setMicActive(false);
-    setMicMessage("Mic off. Tap still works.");
-  };
+    if (!preserveMessage) setMicMessage("Ready when you are.");
+  }, [nativeAudioStream]);
+
+  useEffect(() => {
+    stopMicRef.current = stopMic;
+  }, [stopMic]);
 
   const startMic = async () => {
     if (Platform.OS !== "web") {
       try {
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) {
-          setMicMessage("Mic permission needed. Tap still works.");
+          setMicMessage("Microphone access is needed. Tapping still works.");
           return;
         }
 
         blowStartedAtRef.current = null;
         smoothedBlowLevelRef.current = 0;
         setBlowLevel(0);
-        setMicMessage("Blow gently.");
+        setMicMessage("Blow gently toward the phone.");
         await nativeAudioStream.start();
+        micActiveRef.current = true;
         setMicActive(true);
       } catch {
         setMicActive(false);
-        setMicMessage("Mic unavailable. Tap still works.");
+        setMicMessage("Microphone unavailable. Tapping still works.");
       }
       return;
     }
 
     if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setMicMessage("Mic unavailable. Tap still works.");
+      setMicMessage("Microphone unavailable. Tapping still works.");
       return;
     }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       });
-      const AudioContextConstructor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const AudioContextConstructor =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioContextConstructor) {
         stream.getTracks().forEach((track) => track.stop());
-        setMicMessage("Mic unavailable. Tap still works.");
+        setMicMessage("Microphone unavailable. Tapping still works.");
         return;
       }
 
@@ -403,8 +364,9 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
       streamRef.current = stream;
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
+      micActiveRef.current = true;
       setMicActive(true);
-      setMicMessage("Blow gently.");
+      setMicMessage("Blow gently toward the phone.");
 
       const data = new Uint8Array(analyser.fftSize);
       const tick = () => {
@@ -415,20 +377,19 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
           sum += normalized * normalized;
         }
         const rms = Math.sqrt(sum / data.length);
-        const level = Math.min(1, rms / 0.22);
-        setBlowLevel(level);
+        setBlowLevel(Math.min(1, rms / 0.22));
 
         const now = Date.now();
         if (rms > blowThreshold) {
           blowStartedAtRef.current ??= now;
-          setMicMessage("Keep going.");
+          setMicMessage("Keep exhaling...");
           if (now - blowStartedAtRef.current >= blowHoldMs) {
             blowStartedAtRef.current = null;
             inflateFromBlow();
           }
         } else {
           blowStartedAtRef.current = null;
-          if (micActive) setMicMessage("Blow gently.");
+          setMicMessage("Blow gently toward the phone.");
         }
 
         frameRef.current = requestAnimationFrame(tick);
@@ -436,7 +397,7 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
 
       frameRef.current = requestAnimationFrame(tick);
     } catch {
-      setMicMessage("Mic permission needed. Tap still works.");
+      setMicMessage("Microphone access is needed. Tapping still works.");
     }
   };
 
@@ -447,286 +408,208 @@ function BalloonScreen({ collectionCount, onCollectBalloon }: { collectionCount:
         return;
       }
 
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
       streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
       audioContextRef.current?.close().catch(() => undefined);
-      audioContextRef.current = null;
-      analyserRef.current = null;
     },
     [nativeAudioStream],
   );
 
-  const translateY = float.interpolate({
-    inputRange: [0, 1],
-    outputRange: [8, -8],
-  });
-  const deflatedOpacity = balloonProgress.interpolate({
-    inputRange: [0, 0.45, 1],
-    outputRange: [1, 0.4, 0],
-  });
-  const deflatedAssetScale = balloonProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.7, 0.92],
-  });
-  const inflatedOpacity = balloonProgress.interpolate({
-    inputRange: [0, 0.2, 1],
-    outputRange: [0, 0.45, 1],
-  });
-  const inflatedAssetScale = balloonProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.42, 1],
-  });
-  const breathProgress = breaths / maxBreaths;
-  const collectionPreviewCount = Math.min(collectionCount, 9);
+  const translateY = float.interpolate({ inputRange: [0, 1], outputRange: [7, -7] });
 
   return (
-    <>
-      <LinearGradient
-        colors={["#dceee9", "#f4d0b7", "#8db6ad"]}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
+    <View style={{ alignItems: "center", flex: 1, paddingTop: compactHeight ? spacing.xl : spacing.xxl }}>
+      <View style={{ alignItems: "center", gap: spacing.sm }}>
+        <AppText variant="headline" style={{ textAlign: "center" }}>
+          {collectedThisBalloon ? "A little lighter." : "Take one slow breath."}
+        </AppText>
+        <AppText color={colors.inkSoft} style={{ textAlign: "center" }}>
+          {collectedThisBalloon ? `${savedBalloonLabel(collectionCount)}.` : "Long exhale. Soft shoulders."}
+        </AppText>
+      </View>
+
+      <Pressable
+        accessibilityLabel="Inflate balloon"
+        accessibilityRole="button"
+        onPress={inflate}
         style={{
           alignItems: "center",
-          borderCurve: "continuous",
-          borderRadius: radii.xl,
-          boxShadow: shadows.raised,
-          gap: spacing.lg,
-          minHeight: 440,
-          justifyContent: "space-between",
-          padding: spacing.lg,
+          height: compactHeight ? 280 : 340,
+          justifyContent: "center",
+          width: "100%",
         }}
       >
-        <View style={{ alignItems: "center", gap: spacing.sm }}>
-          <AppText variant="headline" color={colors.ink} style={{ textAlign: "center" }}>
-            Fill the balloon.
-          </AppText>
-        </View>
-
-        <Pressable accessibilityRole="button" accessibilityLabel="Inflate balloon" onPress={inflate} style={{ alignItems: "center" }}>
-          <View style={{ alignItems: "center", height: 214, justifyContent: "center", width: 224 }}>
-            <Animated.View
+        <Animated.View
+          style={{
+            alignItems: "center",
+            height: compactHeight ? 284 : 320,
+            justifyContent: "center",
+            position: "absolute",
+            transform: [{ translateY }],
+            width: compactHeight ? 170 : 190,
+          }}
+        >
+          {balloonFrames.map((frame, index) => (
+            <Image
+              fadeDuration={0}
+              key={index}
+              source={frame}
               style={{
-                alignItems: "center",
-                opacity: deflatedOpacity,
+                height: "100%",
+                opacity: index === breaths ? 1 : 0,
                 position: "absolute",
-                transform: [{ translateY }, { scale: deflatedAssetScale }],
-              }}
-            >
-              <Image
-                source={deflatedBalloon}
-                style={{
-                  height: 208,
-                  resizeMode: "contain",
-                  width: 136,
-                }}
-              />
-            </Animated.View>
-            <Animated.View
-              style={{
-                alignItems: "center",
-                opacity: inflatedOpacity,
-                position: "absolute",
-                transform: [{ translateY }, { scale: inflatedAssetScale }],
-              }}
-            >
-              <Image
-                source={realisticBalloon}
-                style={{
-                  height: 266,
-                  resizeMode: "contain",
-                  width: 210,
-                }}
-              />
-            </Animated.View>
-          </View>
-        </Pressable>
-
-        <View style={{ alignSelf: "stretch", gap: spacing.md }}>
-          <View style={{ gap: spacing.sm }}>
-            <View
-              accessibilityLabel={`Balloon inflation ${Math.round(breathProgress * 100)} percent`}
-              style={{
-                backgroundColor: "rgba(255,253,248,0.38)",
-                borderColor: "rgba(255,253,248,0.72)",
-                borderRadius: radii.pill,
-                borderWidth: 1,
-                height: 12,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "#c76d45",
-                  borderRadius: radii.pill,
-                  height: "100%",
-                  width: `${Math.max(4, breathProgress * 100)}%`,
-                }}
-              />
-            </View>
-            <AppText variant="small" color={colors.ink} style={{ textAlign: "center" }}>
-              {collectedThisBalloon ? "Saved. Start another whenever you need it." : `${breaths} of ${maxBreaths} slow breaths`}
-            </AppText>
-          </View>
-          {micActive && (
-            <View style={{ gap: spacing.sm }}>
-            <View
-              accessibilityLabel={`Blow level ${Math.round(blowLevel * 100)} percent`}
-              style={{
-                backgroundColor: "rgba(255,253,248,0.38)",
-                borderColor: "rgba(255,253,248,0.72)",
-                borderRadius: radii.pill,
-                borderWidth: 1,
-                height: 12,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: radii.pill,
-                  height: "100%",
-                  width: `${Math.max(8, blowLevel * 100)}%`,
-                }}
-              />
-            </View>
-            <AppText variant="small" color={colors.ink} style={{ textAlign: "center" }}>
-              {micMessage}
-            </AppText>
-            </View>
-          )}
-          <Button variant="secondary" onPress={breaths >= maxBreaths ? reset : inflate} style={{ backgroundColor: "rgba(255,253,248,0.48)", borderColor: "rgba(255,253,248,0.8)" }} textStyle={{ color: colors.ink }}>
-            {breaths >= maxBreaths ? "Start another balloon" : "Add one slow breath"}
-          </Button>
-          <Button variant="secondary" onPress={micActive ? stopMic : startMic} style={{ backgroundColor: "rgba(255,253,248,0.34)", borderColor: "rgba(255,253,248,0.68)" }} textStyle={{ color: colors.ink }}>
-            {micActive ? "Turn microphone off" : "Turn microphone on"}
-          </Button>
-        </View>
-      </LinearGradient>
-
-      <Card tone="surface" style={{ gap: spacing.md }}>
-        <View style={{ flexDirection: "row", gap: spacing.md, justifyContent: "space-between" }}>
-          <View style={{ flex: 1, gap: spacing.xs }}>
-            <AppText variant="bodyStrong">Collection</AppText>
-            <AppText color={colors.inkSoft}>
-              {collectionCount === 0 ? "0 saved" : `${collectionCount} saved`}
-            </AppText>
-          </View>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: colors.accentFaint,
-              borderRadius: radii.lg,
-              justifyContent: "center",
-              minHeight: 56,
-              minWidth: 64,
-              paddingHorizontal: spacing.md,
-            }}
-          >
-            <AppText variant="title" color={colors.accentStrong}>
-              {collectionCount}
-            </AppText>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, minHeight: 42 }}>
-          {collectionCount === 0 ? (
-            <View
-              style={{
-                backgroundColor: colors.surfaceWell,
-                borderRadius: radii.pill,
-                height: 34,
-                width: 34,
+                resizeMode: "contain",
+                width: "100%",
               }}
             />
-          ) : (
-            Array.from({ length: collectionPreviewCount }).map((_, index) => (
-              <Image
-                key={index}
-                source={realisticBalloon}
-                style={{
-                  height: 40,
-                  resizeMode: "contain",
-                  width: 32,
-                }}
-              />
-            ))
-          )}
-          {collectionCount > collectionPreviewCount && (
+          ))}
+        </Animated.View>
+      </Pressable>
+
+      <View accessibilityLabel={`${breaths} of ${maxBreaths} slow breaths`} style={{ flexDirection: "row", gap: spacing.sm }}>
+        {Array.from({ length: maxBreaths }).map((_, index) => (
+          <View
+            key={index}
+            style={{
+              backgroundColor: index < breaths ? colors.repair : colors.lineStrong,
+              borderRadius: radii.pill,
+              height: 8,
+              opacity: index < breaths ? 1 : 0.62,
+              width: index < breaths ? 28 : 8,
+            }}
+          />
+        ))}
+      </View>
+
+      <View style={{ alignItems: "center", alignSelf: "stretch", gap: spacing.md, paddingTop: spacing.lg }}>
+        {micActive && (
+          <View style={{ alignSelf: "stretch", gap: spacing.sm }}>
             <View
+              accessibilityLabel={`Breath strength ${Math.round(blowLevel * 100)} percent`}
               style={{
-                alignItems: "center",
-                backgroundColor: colors.surfaceWell,
+                backgroundColor: colors.line,
                 borderRadius: radii.pill,
-                height: 36,
-                justifyContent: "center",
-                paddingHorizontal: spacing.md,
+                height: 4,
+                overflow: "hidden",
               }}
             >
-              <AppText variant="small" color={colors.inkSoft}>
-                +{collectionCount - collectionPreviewCount}
-              </AppText>
+              <View
+                style={{
+                  backgroundColor: colors.accent,
+                  borderRadius: radii.pill,
+                  height: "100%",
+                  width: `${Math.max(6, blowLevel * 100)}%`,
+                }}
+              />
             </View>
-          )}
-        </View>
-      </Card>
-    </>
+          </View>
+        )}
+
+        <AppText variant="small" color={colors.inkSoft} style={{ minHeight: 21, textAlign: "center" }}>
+          {micMessage}
+        </AppText>
+
+        <Button
+          onPress={collectedThisBalloon ? reset : micActive ? () => stopMic() : startMic}
+          style={{ alignSelf: "stretch", boxShadow: shadows.card }}
+        >
+          {collectedThisBalloon ? "Breathe again" : micActive ? "Stop listening" : "Use microphone"}
+        </Button>
+
+        {!collectedThisBalloon && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={inflate}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 44,
+              opacity: pressed ? 0.6 : 1,
+              paddingHorizontal: spacing.lg,
+            })}
+          >
+            <AppText variant="small" color={colors.accentStrong} selectable={false} style={{ fontWeight: "700" }}>
+              Tap the balloon instead
+            </AppText>
+          </Pressable>
+        )}
+      </View>
+    </View>
   );
 }
 
-function TabBar({ screen, onChange }: { screen: Screen; onChange: (screen: Screen) => void }) {
+function TabBar({
+  bottomInset,
+  screen,
+  onChange,
+}: {
+  bottomInset: number;
+  screen: Screen;
+  onChange: (screen: Screen) => void;
+}) {
   const tabs: { label: string; screen: Screen }[] = [
-    { label: "Home", screen: "home" },
-    { label: "Journal", screen: "journal" },
-    { label: "Breather", screen: "breather" },
+    { label: "Breathe", screen: "breathe" },
+    { label: "Morning", screen: "morning" },
   ];
 
   return (
     <View
+      pointerEvents="box-none"
       style={{
-        backgroundColor: "rgba(247,251,247,0.96)",
-        borderColor: colors.line,
-        borderTopWidth: 1,
-        bottom: 0,
-        boxShadow: shadows.card,
-        flexDirection: "row",
-        gap: spacing.sm,
+        alignItems: "center",
+        bottom: Math.max(bottomInset, spacing.md),
         left: 0,
-        paddingBottom: 28,
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
+        paddingHorizontal: spacing.xl,
         position: "absolute",
         right: 0,
       }}
     >
-      {tabs.map((tab) => {
-        const active = tab.screen === screen;
-        return (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            key={tab.label}
-            onPress={() => onChange(tab.screen)}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              backgroundColor: active ? colors.accent : colors.surface,
-              borderColor: active ? colors.accent : colors.line,
-              borderRadius: radii.pill,
-              borderWidth: 1,
-              flex: 1,
-              justifyContent: "center",
-              minHeight: 48,
-              opacity: pressed ? 0.86 : 1,
-            })}
-          >
-            <AppText variant="small" color={active ? "#ffffff" : colors.inkSoft} selectable={false} style={{ fontWeight: "700" }}>
-              {tab.label}
-            </AppText>
-          </Pressable>
-        );
-      })}
+      <View
+        style={{
+          backgroundColor: "rgba(255,253,248,0.94)",
+          borderColor: colors.line,
+          borderCurve: "continuous",
+          borderRadius: radii.lg,
+          borderWidth: 1,
+          boxShadow: shadows.raised,
+          flexDirection: "row",
+          gap: spacing.xs,
+          maxWidth: 382,
+          padding: spacing.xs,
+          width: "100%",
+        }}
+      >
+        {tabs.map((tab) => {
+          const active = tab.screen === screen;
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              key={tab.label}
+              onPress={() => onChange(tab.screen)}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: active ? colors.accent : "transparent",
+                borderCurve: "continuous",
+                borderRadius: radii.md,
+                flex: 1,
+                justifyContent: "center",
+                minHeight: 52,
+                opacity: pressed ? 0.82 : 1,
+              })}
+            >
+              <AppText
+                variant="small"
+                color={active ? "#ffffff" : colors.inkSoft}
+                selectable={false}
+                style={{ fontWeight: "700" }}
+              >
+                {tab.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
